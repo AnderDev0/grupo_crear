@@ -1,0 +1,778 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LogoIntro from '../components/LogoIntro.astro';
+import RocketCursor from '../components/RocketCursor.astro';
+import ContactDialog from '../components/ContactDialog.astro';
+import MeteorScroll from '../components/MeteorScroll.astro';
+import LogoHeroMask from '../components/LogoHeroMask.astro';
+---
+
+<Layout
+  title="Grupo Crear — Agencia de Publicidad · Bogotá, Colombia"
+  description="Agencia de publicidad y soluciones gráficas. Impresión gran formato, material POP, branding y diseño web en Colombia."
+>
+  <!-- Overlay de intro cinématico — se oculta tras el zoom reveal -->
+  <LogoIntro slot="intro" />
+
+  <RocketCursor slot="cursor" />
+
+  <!-- ═══════════════════════════════════════════════
+       FOLD 1 — VISUAL: intro animation, meteor, collage (100vh, no text)
+  ═══════════════════════════════════════════════ -->
+  <section id="hero-visual" class="relative h-screen w-full overflow-hidden bg-[#001433]">
+    <div class="hero-glow pointer-events-none absolute w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full top-[-25%] right-[-15%] opacity-100" id="glow-bg" style="background: radial-gradient(circle, rgba(232,78,27,0.22), transparent 60%); filter: blur(40px);"></div>
+
+    <!-- El Meteoro central (visible al inicio detrás de la máscara) -->
+    <div class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-100" id="meteor-container">
+      <div id="meteor-inner" class="w-[450px] h-[450px]">
+        <MeteorScroll />
+      </div>
+    </div>
+
+    <!-- Filtro SVG para Aberración Cromática (RGB Split) Dinámica -->
+    <svg class="hidden" aria-hidden="true">
+      <defs>
+        <filter id="chromatic-aberration">
+          <feOffset in="SourceGraphic" dx="0" dy="0" id="red-offset" result="red" />
+          <feColorMatrix in="red" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red-channel"/>
+          <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green-channel"/>
+          <feOffset in="SourceGraphic" dx="0" dy="0" id="blue-offset" result="blue" />
+          <feColorMatrix in="blue" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue-channel"/>
+          <feBlend in="red-channel" in2="green-channel" mode="screen" result="temp"/>
+          <feBlend in="temp" in2="blue-channel" mode="screen"/>
+        </filter>
+      </defs>
+    </svg>
+
+    <!-- Collage Parallax de 5 tarjetas (visibles al inicio detrás de la máscara) -->
+    <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden" id="collage-container" style="perspective: 1000px; transform-style: preserve-3d; filter: url(#chromatic-aberration);">
+      <!-- Tarjeta 1: Rebranding Nexus -->
+      <div class="card-parallax absolute top-[20%] right-[18%] w-72 rounded-xl overflow-hidden shadow-2xl opacity-100"
+           data-speed="-1.5" data-x="450" data-y="-350" data-rx="-25" data-ry="30" data-sk="-8">
+        <img src="/rebranding_nexus.webp" alt="Rebranding Nexus" class="w-full h-auto" />
+      </div>
+
+      <!-- Tarjeta 2: Vista Mac -->
+      <div class="card-parallax absolute bottom-[22%] right-[16%] w-36 rounded-xl overflow-hidden shadow-2xl opacity-100"
+           data-speed="2.2" data-x="500" data-y="300" data-rx="25" data-ry="25" data-sk="8">
+        <video autoplay loop muted playsinline class="w-full h-auto" aria-hidden="true">
+          <source data-src="/VistaMacCinematica_3.webm" type="video/webm" />
+        </video>
+      </div>
+
+      <!-- Tarjeta 3: Publicidad Exterior -->
+      <div class="card-parallax absolute bottom-[16%] left-[14%] w-80 rounded-xl overflow-hidden shadow-2xl opacity-100"
+           data-speed="-1" data-x="-500" data-y="400" data-rx="30" data-ry="-25" data-sk="-8">
+        <video autoplay loop muted playsinline class="w-full h-auto" aria-hidden="true">
+          <source data-src="/Publicidad_pantallaedificio_cocacola.webm" type="video/webm" />
+        </video>
+      </div>
+
+      <!-- Tarjeta 4: Gran Formato -->
+      <div class="card-parallax absolute top-[22%] left-[6%] w-64 rounded-xl overflow-hidden shadow-2xl opacity-100"
+           data-speed="1.2" data-x="-450" data-y="-300" data-rx="-25" data-ry="-30" data-sk="8">
+        <video autoplay loop muted playsinline class="w-full h-auto" aria-hidden="true">
+          <source data-src="/Impresion-a-gran-formato_naranja_3.webm" type="video/webm" />
+        </video>
+      </div>
+
+      <!-- Tarjeta 5: Alternativa Naranja 3D -->
+      <div class="card-parallax absolute top-[38%] left-[29%] w-44 h-44 rounded-full overflow-hidden shadow-2xl opacity-100"
+           data-speed="-0.8" data-x="-600" data-y="-50" data-rx="-20" data-ry="-20" data-sk="4">
+        <img src="/alternativa_naranja3d.webp" alt="Alternativa Naranja 3D" class="w-full h-full object-cover" />
+      </div>
+    </div>
+
+    <!-- Logo hero mask — overlay oscuro con silueta del logo como ventana (z-20) -->
+    <LogoHeroMask />
+
+    <div class="absolute bottom-10 left-[50%] -translate-x-1/2 text-center text-white/40 text-xs uppercase tracking-widest pointer-events-none opacity-0 z-[30]" id="scroll-indicator">
+      <span>Scroll</span>
+      <span class="block mt-2 animate-bounce">↓</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       FOLD 2 — CONTENT: text reveal on scroll
+  ═══════════════════════════════════════════════ -->
+  <section id="hero-content" class="relative min-h-screen w-full flex flex-col justify-center bg-[#001433]" style="padding: clamp(80px,11vw,150px) clamp(20px,5vw,64px);" aria-label="Hero principal">
+    <div style="max-width:1100px;">
+
+      <div class="kick" id="hero-kick" style="opacity:0;transform:translateY(16px);">
+        <i></i><span>Agencia de publicidad · Bogotá, Colombia</span>
+      </div>
+
+      <h1 class="big" id="hero-title" style="margin-top:clamp(24px,4vw,40px);">
+        <span class="ln"><span style="opacity:0;transform:translateY(105%);">Hacemos que tu</span></span>
+        <span class="ln"><span style="opacity:0;transform:translateY(105%);">marca <em>haga ruido.</em></span></span>
+      </h1>
+
+      <div class="hero-row">
+        <p class="hero-lead" id="hero-lead">Diseño, impresión gran formato, branding y digital para empresas que necesitan dejar de pasar desapercibidas. Resultados que se ven y que venden.</p>
+        <div class="hero-acts" id="hero-actions">
+          <a href="#cto" class="btn-fill">
+            Empezar proyecto
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+          <a href="#port" class="btn-line">Ver trabajo</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       MARQUEE
+  ═══════════════════════════════════════════════ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="mq-track" id="mq">
+      <span>Impresión</span><i class="sep"></i>
+      <span>Gran Formato</span><i class="sep"></i>
+      <span>Branding</span><i class="sep"></i>
+      <span>Material POP</span><i class="sep"></i>
+      <span>Diseño Web</span><i class="sep"></i>
+      <span>Fotografía</span><i class="sep"></i>
+      <span>Campañas</span><i class="sep"></i>
+      <span>Stands</span><i class="sep"></i>
+      <span>Impresión</span><i class="sep"></i>
+      <span>Gran Formato</span><i class="sep"></i>
+      <span>Branding</span><i class="sep"></i>
+      <span>Material POP</span><i class="sep"></i>
+      <span>Diseño Web</span><i class="sep"></i>
+      <span>Fotografía</span><i class="sep"></i>
+      <span>Campañas</span><i class="sep"></i>
+      <span>Stands</span><i class="sep"></i>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SERVICIOS
+  ═══════════════════════════════════════════════ -->
+  <section id="serv" aria-labelledby="serv-title">
+    <div class="wrap">
+      <div class="serv-head">
+        <div>
+          <div class="idx r">01 — Servicios</div>
+          <h2 class="lead r" data-d="1" id="serv-title">Lo que<br><em>hacemos.</em></h2>
+        </div>
+        <p class="r" data-d="2">Soluciones gráficas integrales — desde una valla de 8 metros hasta el sitio web que la respalda. Todo bajo un mismo equipo.</p>
+      </div>
+
+      <div class="serv-list">
+        <div class="srow r" data-d="1">
+          <div class="snum">01</div>
+          <div class="sbody">
+            <div class="stitle">Impresión Gran Formato</div>
+            <div class="smeta">Vallas, pendones, lonas, backlight y stands de exhibición con calidad fotográfica y color fiel a tu marca.</div>
+          </div>
+          <div class="sicon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="6"/><path d="M6 17H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>
+          </div>
+        </div>
+
+        <div class="srow r" data-d="1">
+          <div class="snum">02</div>
+          <div class="sbody">
+            <div class="stitle">Diseño & Desarrollo Web</div>
+            <div class="smeta">Sitios orientados a conversión, con SEO técnico y local para que Google te encuentre antes que a la competencia.</div>
+          </div>
+          <div class="sicon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20M6 6.5h0M9 6.5h0"/></svg>
+          </div>
+        </div>
+
+        <div class="srow r" data-d="1">
+          <div class="snum">03</div>
+          <div class="sbody">
+            <div class="stitle">Material P.O.P</div>
+            <div class="smeta">Exhibidores, displays y activaciones de punto de venta diseñados para impulsar la decisión de compra.</div>
+          </div>
+          <div class="sicon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 14h6"/></svg>
+          </div>
+        </div>
+
+        <div class="srow r" data-d="1">
+          <div class="snum">04</div>
+          <div class="sbody">
+            <div class="stitle">Branding & Identidad</div>
+            <div class="smeta">Construcción y rediseño de marca: logo, manual, sistema visual y aplicaciones que generan confianza B2B.</div>
+          </div>
+          <div class="sicon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>
+          </div>
+        </div>
+
+        <div class="srow r" data-d="1">
+          <div class="snum">05</div>
+          <div class="sbody">
+            <div class="stitle">Fotografía Publicitaria</div>
+            <div class="smeta">Producto, corporativa y editorial. Imágenes que refuerzan tu profesionalismo y atraen clientes de valor.</div>
+          </div>
+          <div class="sicon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 7h3l1.5-2h9L18 7h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          </div>
+        </div>
+
+        <div class="srow r" data-d="1">
+          <div class="snum">06</div>
+          <div class="sbody">
+            <div class="stitle">Campañas Integrales</div>
+            <div class="smeta">Del concepto a la producción: lanzamientos, temporadas y activaciones de marca con una sola dirección creativa.</div>
+          </div>
+          <div class="sicon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 11l16-7-4 16-4-6-8-3z"/><path d="M11 14l3 3"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       NOSOTROS
+  ═══════════════════════════════════════════════ -->
+  <section id="nos" aria-labelledby="nos-title">
+    <div class="wrap">
+      <div class="nos-grid">
+        <div class="nos-fig r">
+          <div class="nos-frame">
+            <span class="tag">El Estudio · Bogotá</span>
+            <span class="yr">12</span>
+          </div>
+          <div class="nos-badge">
+            <b>+500</b>
+            <small>proyectos entregados para marcas de toda Colombia.</small>
+          </div>
+        </div>
+        <div class="nos-txt r" data-d="2">
+          <div class="idx">02 — Estudio</div>
+          <h2 class="lead" id="nos-title">Una década<br>haciendo <em>marcas<br>visibles.</em></h2>
+          <p>Somos <strong>Grupo Crear</strong>, un equipo de diseño y producción gráfica que trabaja con gerentes y dueños de Pymes — gente que no tiene tiempo y necesita soluciones que funcionen.</p>
+          <p>No vendemos piezas sueltas. Construimos sistemas visuales coherentes: lo que se imprime, lo que se publica y lo que se ve en el punto de venta hablan el mismo idioma.</p>
+          <div class="nos-stats">
+            <div class="nos-stat"><b>12+</b><span>Años de experiencia</span></div>
+            <div class="nos-stat"><b>98%</b><span>Clientes que repiten</span></div>
+            <div class="nos-stat"><b>72h</b><span>Tiempo de respuesta</span></div>
+            <div class="nos-stat"><b>B2B</b><span>Enfoque empresarial</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       PORTAFOLIO
+  ═══════════════════════════════════════════════ -->
+  <section id="port" aria-labelledby="port-title">
+    <div class="wrap">
+      <div class="serv-head">
+        <div>
+          <div class="idx r">03 — Trabajo</div>
+          <h2 class="lead r" data-d="1" id="port-title">Casos<br><em>reales.</em></h2>
+        </div>
+        <p class="r" data-d="2">El cliente B2B compra cuando ve lo que hiciste para alguien como él. Aquí hay pruebas.</p>
+      </div>
+
+      <div class="port-grid">
+        <!-- Proyecto A — Rebranding Nexus (imagen real) -->
+        <a href="#cto" class="proj a r" data-d="1">
+          <div class="proj-media">
+            <img src="/rebranding_nexus.webp" alt="Rebranding Nexus — caso de estudio" loading="lazy" />
+          </div>
+          <div class="arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+          </div>
+          <div class="ptag"><b></b>Rebranding</div>
+          <h4>Nexus — Identidad Completa</h4>
+          <div class="pmeta">Pyme Servicios · Bogotá · 2024</div>
+        </a>
+
+        <!-- Proyecto B — Gran formato video -->
+        <a href="#cto" class="proj b r" data-d="2">
+          <div class="proj-media">
+            <video data-src="/Impresion-a-gran-formato_naranja_3.webm" autoplay loop muted playsinline aria-hidden="true"></video>
+          </div>
+          <div class="arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+          </div>
+          <div class="ptag"><b></b>Gran Formato</div>
+          <h4>Impresión Gran Escala</h4>
+          <div class="pmeta">Retail · 2024</div>
+        </a>
+
+        <!-- Proyecto C — 3D naranja -->
+        <a href="#cto" class="proj c r" data-d="1">
+          <div class="proj-media">
+            <img src="/alternativa_naranja3d.webp" alt="Modelado 3D naranja" loading="lazy" />
+          </div>
+          <div class="arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+          </div>
+          <div class="ptag"><b></b>Modelado 3D</div>
+          <h4>Concepto Visual 3D</h4>
+          <div class="pmeta">Campaña Digital · 2024</div>
+        </a>
+
+        <!-- Proyecto D — Publicidad exterior video -->
+        <a href="#cto" class="proj d r" data-d="2">
+          <div class="proj-media">
+            <video data-src="/Publicidad_pantallaedificio_cocacola.webm" autoplay loop muted playsinline aria-hidden="true"></video>
+          </div>
+          <div class="arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+          </div>
+          <div class="ptag"><b></b>Publicidad Exterior</div>
+          <h4>Pantalla Edificio</h4>
+          <div class="pmeta">Consumo masivo · 2024</div>
+        </a>
+
+        <!-- Proyecto E — SEO/Web -->
+        <a href="#cto" class="proj e r" data-d="3">
+          <div class="bgfill f5"></div>
+          <div class="arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+          </div>
+          <div class="ptag"><b></b>Diseño Web</div>
+          <h4>Sitio B2B + SEO</h4>
+          <div class="pmeta">×3 tráfico orgánico · 2024</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       SEO
+  ═══════════════════════════════════════════════ -->
+  <section id="seo" aria-labelledby="seo-title">
+    <div class="wrap">
+      <div class="serv-head">
+        <div>
+          <div class="idx r">04 — Posicionamiento</div>
+          <h2 class="lead r" data-d="1" id="seo-title">Para que<br>Google te <em>elija.</em></h2>
+        </div>
+        <p class="r" data-d="2">Cada proyecto digital nace optimizado para captar clientes con intención real de compra.</p>
+      </div>
+      <div class="seo-grid">
+        <div class="seo-c r" data-d="1">
+          <div class="seo-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </div>
+          <h5>Keyword Mapping</h5>
+          <p>Palabras transaccionales de alto valor mapeadas por servicio e intención de búsqueda.</p>
+        </div>
+        <div class="seo-c r" data-d="2">
+          <div class="seo-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          </div>
+          <h5>Estructura URL</h5>
+          <p>Rutas amigables y semánticas para usuarios y robots.</p>
+          <code>/servicios/material-pop</code>
+        </div>
+        <div class="seo-c r" data-d="3">
+          <div class="seo-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 19v-7M13 19V9M18 19v-4"/></svg>
+          </div>
+          <h5>Jerarquía H1/H2</h5>
+          <p>Encabezados estructurados para que Google lea la prioridad exacta de cada página.</p>
+        </div>
+        <div class="seo-c r" data-d="4">
+          <div class="seo-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg>
+          </div>
+          <h5>WPO Total</h5>
+          <p>Carga diferida y optimización técnica. Menos de 3 segundos en móvil, garantizado.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       CONTACTO
+  ═══════════════════════════════════════════════ -->
+  <section id="cto" aria-labelledby="cto-title">
+    <div class="cto-huge" aria-hidden="true">Crear</div>
+    <div class="wrap">
+      <div class="cto-grid">
+        <div class="cto-l r">
+          <div class="idx">05 — Contacto</div>
+          <h2 class="lead" id="cto-title">Hagamos<br><em>ruido.</em></h2>
+          <p>Cuéntanos qué necesitas. Respondemos en menos de 24 horas con una propuesta concreta y sin compromiso.</p>
+          <div class="cto-info">
+            <a href="mailto:info@grupocrear.com">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+              <b>info@grupocrear.com</b><span>Email</span>
+            </a>
+            <a href="tel:+576010000000">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
+              <b>+57 (601) 000-0000</b><span>Teléfono</span>
+            </a>
+            <a href="https://wa.me/573000000000" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.6-4A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 10c0 3 2 5 5 5"/></svg>
+              <b>Escríbenos por WhatsApp</b><span>24/7</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Formulario inline -->
+        <div class="cto-form r" data-d="2">
+          <form id="contact-form-inline" novalidate>
+            <div class="fg-row">
+              <div class="fg">
+                <label for="ci-nombre">Nombre</label>
+                <input id="ci-nombre" name="nombre" type="text" placeholder="Tu nombre" required minlength="2" autocomplete="name" />
+              </div>
+              <div class="fg">
+                <label for="ci-empresa">Empresa</label>
+                <input id="ci-empresa" name="empresa" type="text" placeholder="Tu empresa" autocomplete="organization" />
+              </div>
+            </div>
+            <div class="fg">
+              <label for="ci-servicio">¿Qué necesitas?</label>
+              <select id="ci-servicio" name="servicio">
+                <option value="" disabled selected>Selecciona un servicio</option>
+                <option>Impresión gran formato / Vallas</option>
+                <option>Material POP</option>
+                <option>Branding / Identidad</option>
+                <option>Diseño y desarrollo web</option>
+                <option>Fotografía publicitaria</option>
+                <option>Campaña integral</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="fg-row">
+              <div class="fg">
+                <label for="ci-email">Email</label>
+                <input id="ci-email" name="email" type="email" placeholder="tu@empresa.com" required autocomplete="email" />
+              </div>
+              <div class="fg">
+                <label for="ci-tel">Teléfono</label>
+                <input id="ci-tel" name="telefono" type="tel" placeholder="+57 300 000 0000" autocomplete="tel" />
+              </div>
+            </div>
+            <div class="fg">
+              <label for="ci-mensaje">Cuéntanos más</label>
+              <textarea id="ci-mensaje" name="mensaje" placeholder="Describe brevemente tu proyecto..." required minlength="10"></textarea>
+            </div>
+            <div id="inline-response" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:6px;font-size:14px;" aria-live="assertive"></div>
+            <button class="submit-btn" id="ci-submit" type="submit">
+              <span id="ci-submit-text">Enviar cotización</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════ -->
+  <footer>
+    <div class="foot-top">
+      <div class="foot-brand">
+        <b>CREAR<em>.</em></b>
+        <p>Agencia de publicidad y soluciones gráficas. Hacemos que tu marca se vea, se recuerde y venda.</p>
+      </div>
+      <div class="foot-cols">
+        <div class="fcol">
+          <h6>Servicios</h6>
+          <a href="#serv">Gran Formato</a>
+          <a href="#serv">Material POP</a>
+          <a href="#serv">Branding</a>
+          <a href="#serv">Diseño Web</a>
+        </div>
+        <div class="fcol">
+          <h6>Estudio</h6>
+          <a href="#nos">Nosotros</a>
+          <a href="#port">Trabajo</a>
+          <a href="#cto">Contacto</a>
+        </div>
+        <div class="fcol">
+          <h6>Síguenos</h6>
+          <a href="#" rel="noopener noreferrer">Instagram</a>
+          <a href="#" rel="noopener noreferrer">LinkedIn</a>
+          <a href="#" rel="noopener noreferrer">Behance</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2025 Grupo Crear. Todos los derechos reservados.</span>
+      <span>Bogotá · Colombia</span>
+    </div>
+  </footer>
+
+  <!-- Modal de contacto (popup alternativo) -->
+  <ContactDialog />
+
+</Layout>
+
+<script>
+  import { gsap } from '../utils/gsap-config';
+
+  // Mismo sistema que Podium:
+  // • Sin pin — la sección sale de pantalla con scroll natural
+  // • Velocidad de Lenis → aberración cromática en tiempo real (≈ pulseLerp / pulseMult)
+  // • scrub:1.4 en cards = inercia lerp (≈ positionLerp:0.05 a 60fps)
+  // • scrub:1.8 en meteoro = más "masa" que las tarjetas (≈ rotationLerp:0.26)
+  // • ease-expo en textos = cubic-bezier(.16,1,.3,1) idéntico a Podium
+  window.addEventListener('intro:complete', () => {
+
+    // ── Activar videos del collage — diferidos para no competir con el intro ──
+    // Los <source data-src="..."> no tienen src hasta este momento,
+    // así que el browser no descarga ni decodifica estos videos durante
+    // los primeros ~3s (duración del intro). Esto libera ancho de banda
+    // para el LCP y reduce el TBT en la carga inicial.
+    document.querySelectorAll<HTMLSourceElement>('#collage-container source[data-src]').forEach((s) => {
+      s.src = s.dataset.src!;
+      (s.parentElement as HTMLVideoElement | null)?.load();
+    });
+
+    // ── Indicador de scroll ─────────────────────────────────────────────────
+    gsap.set('#scroll-indicator', { opacity: 1 });
+
+    // ── Hero-content: texto del segundo fold con expo easing ────────────────
+    // Usa la misma curva que Podium's @keyframes reveal / --ease-out-expo.
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#hero-content',
+        start: 'top 85%',
+        toggleActions: 'play none none none',
+      },
+    })
+    .to('#hero-kick',            { opacity:1, y:0, duration:.7, ease:'power4.out' })
+    .to('#hero-title span span', { opacity:1, y:0, duration:.9, stagger:.13, ease:'power4.out' }, '-=0.4')
+    .to(['#hero-lead','#hero-actions'], { opacity:1, y:0, duration:.7, stagger:.1, ease:'power4.out' }, '-=0.5');
+
+    // ── Sistema de scroll del hero ──────────────────────────────────────────
+    initScrollSystem();
+
+    function initScrollSystem() {
+      const cards       = gsap.utils.toArray<HTMLElement>('.card-parallax');
+      const redOffset   = document.getElementById('red-offset');
+      const blueOffset  = document.getElementById('blue-offset');
+      const logoGroup   = document.getElementById('logo-hero-paths')  as SVGGElement           | null;
+      const logoOverlay = document.getElementById('logo-hero-overlay') as HTMLElement          | null;
+      const overlayGrad = document.getElementById('overlay-grad')      as SVGRadialGradientElement | null;
+
+      // Aberración cromática reactiva a velocidad de scroll (Lenis velocity → feOffset)
+      let aberLerp = 0;
+      gsap.ticker.add(() => {
+        const vel = Math.abs((window as any).__lenis?.velocity ?? 0);
+        aberLerp += (vel - aberLerp) * 0.12;
+        const off = Math.min(aberLerp * 0.85, 12);
+        redOffset?.setAttribute('dx',  String(-off));
+        blueOffset?.setAttribute('dx', String( off));
+      });
+
+      gsap.set('#scroll-indicator', { opacity: 1 });
+
+      // El overlay empieza en opacity:0 para evitar flash antes del intro.
+      // Lo ponemos a 1 inmediatamente aquí — el intro ya terminó.
+      if (logoOverlay) gsap.set(logoOverlay, { opacity: 1 });
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // ── Gradiente circular — setup inicial ────────────────────────────────
+      // Radio inicial: 35% del lado corto → círculo que cubre todo el logo.
+      // Radio final:   130% del lado corto → cubre el viewport completo
+      //                antes de que el overlay se desvanezca (t:0.75).
+      // Centro vertical: 50% (centrado en el viewport donde vive el logo).
+      const gradR0   = Math.min(vw, vh) * 0.35;
+      const gradREnd = Math.min(vw, vh) * 1.3;
+      const gradCx   = vw / 2;
+      const gradCy   = vh / 2;
+      if (overlayGrad) {
+        overlayGrad.setAttribute('cx', String(gradCx));
+        overlayGrad.setAttribute('cy', String(gradCy));
+        overlayGrad.setAttribute('r',  String(gradR0));
+        // Oval orientado hacia la punta del cohete (esquina superior-derecha).
+        // rotate(-50) = -50° desde horizontal = dirección upper-right en SVG (y↓).
+        // scale(1.55, 0.80) = eje mayor 1.55× hacia el cohete, menor 0.80× perpendicular.
+        // translate(cx cy) … translate(-cx -cy) = rotación/escala alrededor del centro.
+        overlayGrad.setAttribute('gradientTransform',
+          `translate(${gradCx} ${gradCy}) rotate(-50) scale(1.55 0.80) translate(${-gradCx} ${-gradCy})`
+        );
+      }
+
+      // ── Single scrubbed timeline con pin ─────────────────────────────────
+      //
+      // Equivalente a Podium's canvas WebGL (position:fixed, z:0) +
+      // animation-timeline:scroll(root) que mantiene el hero visible.
+      //
+      // Una sola timeline de duración 2.0 controla todo el hero:
+      //
+      //   t:0.0 → 1.0  (50% scroll = 80vh)
+      //     Logo mask: huecos escalan 1× → 55× desde el centro.
+      //     Similar al canvas de Podium que se "expande" al cargarse.
+      //     Al final: overlay completamente transparente, hero visible.
+      //
+      //   t:1.0 → 2.0  (50% scroll = 80vh)
+      //     Cards + meteor: dispersión warp-speed con 3D bending + blur.
+      //     La "cámara" se sumerge en la escena.
+      //
+      // Total: 160vh de scroll antes de que el hero se desancle.
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#hero-visual',
+          pin:     true,
+          start:   'top top',
+          end:     '+=160%',
+          scrub:   1,
+          invalidateOnRefresh: true,
+          onRefresh() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if (logoGroup) {
+              gsap.set(logoGroup, { svgOrigin: `${w / 2} ${h / 2}` });
+            }
+            if (overlayGrad) {
+              const ocx = w / 2;
+              const ocy = h / 2;
+              overlayGrad.setAttribute('cx', String(ocx));
+              overlayGrad.setAttribute('cy', String(ocy));
+              overlayGrad.setAttribute('r',  String(Math.min(w, h) * 0.35));
+              overlayGrad.setAttribute('gradientTransform',
+                `translate(${ocx} ${ocy}) rotate(-45) scale(1.58 1.08) translate(${-ocx} ${-ocy})`
+              );
+            }
+          },
+        },
+      });
+
+      // ── Fase A: Logo zoom (t:0 → 1.0) ────────────────────────────────────
+      if (logoGroup) {
+        tl.fromTo(logoGroup,
+          { scale: 1,  svgOrigin: `${vw / 2} ${vh / 2}` },
+          { scale: 55, ease: 'power2.in', duration: 1.0 },
+          0,
+        );
+      }
+      // Gradiente: radio expande en sync con el logo zoom.
+      // duration:0.75 = termina exactamente cuando el overlay empieza a
+      // desvanecerse (t:0.75) → color y overlay desaparecen juntos, nunca desfasados.
+      // gradREnd (130% del lado corto) cubre el viewport completo al terminar.
+      if (overlayGrad) {
+        tl.fromTo(overlayGrad,
+          { attr: { r: gradR0 } },
+          { attr: { r: gradREnd }, ease: 'power2.in', duration: 0.75 },
+          0,
+        );
+      }
+      // Overlay fade: empieza al 75% del zoom (huecos ya cubren casi todo)
+      if (logoOverlay) {
+        tl.to(logoOverlay, { opacity: 0, ease: 'none', duration: 0.25 }, 0.75);
+      }
+      // Scroll indicator desaparece al inicio
+      tl.to('#scroll-indicator', { opacity: 0, ease: 'none', duration: 0.15 }, 0);
+
+      // ── Header reactivo (Fase A) ──────────────────────────────────────────
+      // El overlay blanco/naranja entra en Fase A.
+      // El header tiene texto blanco que se pierde sobre blanco → lo volvemos
+      // oscuro/naranja mientras el overlay esté activo, luego restaura.
+      //
+      // logoWrap: filter:brightness(0) → todas las rutas SVG se vuelven negras
+      //   (el cohete naranja, las letras "GRUPO CREAR" y el tagline → todos
+      //   negros = perfectamente legibles sobre blanco/naranja).
+      //
+      // Links del menú: navy (#001433) sobre blanco/naranja → máximo contraste.
+      // Burger spans: también navy para mobile.
+      //
+      // Restauración en t:0.82 (cuando overlay ya casi desapareció) →
+      // logo vuelve a su apariencia normal, links vuelven a blanco/60%.
+
+      // Entrada — t:0.05 (casi inmediato al primer scroll)
+      tl.to('#logoWrap', { filter: 'brightness(0)', duration: 0.2 }, 0.05);
+      tl.to('#menu a:not(.cta)', { color: '#001433', duration: 0.2 }, 0.05);
+      tl.to('.burger span', { backgroundColor: '#001433', duration: 0.2 }, 0.05);
+
+      // Salida — t:0.78 (antes de que Fase B empiece)
+      tl.to('#logoWrap', { filter: 'brightness(1)', duration: 0.2 }, 0.78);
+      tl.to('#menu a:not(.cta)', { color: 'rgba(255,255,255,0.6)', duration: 0.2 }, 0.78);
+      tl.to('.burger span', { backgroundColor: '#ffffff', duration: 0.2 }, 0.78);
+
+      // ── Fase B: Dispersión cards + meteor (t:1.0 → 2.0) ──────────────────
+      cards.forEach((card) => {
+        const tx = parseFloat(card.dataset.x  ?? '0');
+        const ty = parseFloat(card.dataset.y  ?? '0');
+        const rx = parseFloat(card.dataset.rx ?? '0');
+        const ry = parseFloat(card.dataset.ry ?? '0');
+        const sk = parseFloat(card.dataset.sk ?? '0');
+
+        tl.fromTo(card,
+          {
+            x: 0, y: 0, z: 0, scaleX: 1, scaleY: 1,
+            rotateX: 0, rotateY: 0, skewX: 0,
+            filter: 'blur(0px) brightness(1) contrast(1)',
+            transformPerspective: 1000, opacity: 1,
+          },
+          {
+            x: tx, y: ty, z: 450, scaleX: 3.5, scaleY: 2.2,
+            rotateX: rx, rotateY: ry, skewX: sk,
+            filter: 'blur(18px) brightness(2.2) contrast(1.1)',
+            opacity: 0, ease: 'power2.in', duration: 1.0,
+          },
+          1.0,
+        );
+      });
+
+      if (redOffset && blueOffset) {
+        tl.fromTo(redOffset,  { attr:{dx:0} }, { attr:{dx:-12}, ease:'power2.in', duration:1.0 }, 1.0);
+        tl.fromTo(blueOffset, { attr:{dx:0} }, { attr:{dx: 12}, ease:'power2.in', duration:1.0 }, 1.0);
+      }
+
+      tl.fromTo('#meteor-container',
+        { scale:1, opacity:1 },
+        { scale:2.5, opacity:0, ease:'power2.in', duration:1.0 },
+        1.0,
+      );
+    }
+  });
+
+  // Lazy-load portfolio videos: only request the file when the card enters the viewport.
+  // rootMargin:'300px' starts the fetch ~300px before the card is visible,
+  // so the video is ready to play by the time the user scrolls to it.
+  const lazyVideos = document.querySelectorAll<HTMLVideoElement>('video[data-src]');
+  if (lazyVideos.length) {
+    const vidObs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const v = entry.target as HTMLVideoElement;
+        v.src = v.dataset.src!;
+        v.load();
+        vidObs.unobserve(v);
+      });
+    }, { rootMargin: '300px' });
+    lazyVideos.forEach((v) => vidObs.observe(v));
+  }
+</script>
+
+<style>
+  /* Collage cards: shadow rim for depth separation against the dark background */
+  .card-parallax {
+    box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+    backface-visibility: hidden;
+  }
+
+  /* Mobile responsivo — mismo efecto que desktop */
+  @media (max-width: 768px) {
+    /* Meteor más pequeño para no bloquear las tarjetas en pantallas estrechas */
+    #meteor-inner {
+      width:  55vw !important;
+      height: 55vw !important;
+    }
+    /* Las tarjetas usan max-width para no desbordar el viewport en mobile.
+       Se preserva la posición absoluta porcentual para que la animación
+       de dispersión funcione igual que en desktop. */
+    .card-parallax {
+      max-width: 44vw;
+    }
+    /* La tarjeta circular mantiene proporciones */
+    .card-parallax.rounded-full {
+      max-width: 28vw !important;
+      height: 28vw !important;
+    }
+  }
+</style>

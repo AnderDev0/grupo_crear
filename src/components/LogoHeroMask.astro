@@ -1,0 +1,83 @@
+---
+import { readFileSync } from 'node:fs';
+import { resolve }      from 'node:path';
+
+let logoPaths = '';
+try {
+  const svgRaw  = readFileSync(resolve('public/logo-Grupo-Crear-vector_sintext.svg'), 'utf-8');
+  const matches = [...svgRaw.matchAll(/<path\s+class="b"[^>]*\/>/g)];
+  logoPaths = matches.map(m => m[0].replace(/\s*class="[^"]*"/g, '')).join('\n');
+} catch (_) {}
+---
+
+<!--
+  LogoHeroMask — equivalente al preloader canvas de Podium.
+
+  Podium:  bg-white z-10000 cubre el canvas WebGL (z:0) hasta que carga.
+  Aquí:    bg-#001433 z-20 cubre el hero content hasta que el usuario scrollea.
+
+  fill-opacity="1" es CRÍTICO: fuera del logo, el overlay es 100% opaco.
+  Solo dentro de la silueta del logo se ve el hero content.
+  NO hay turbulencia por ahora — silueta limpia.
+
+  La animación de expansión (huecos escalan 1× → 55×) es controlada
+  desde index.astro via GSAP ScrollTrigger en una single timeline scrubbed.
+  Este componente solo provee el markup — cero JS aquí.
+-->
+{logoPaths && (
+  <div
+    id="logo-hero-overlay"
+    aria-hidden="true"
+    style="position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      style="position:absolute;inset:0;width:100%;height:100%;display:block;"
+      aria-hidden="true"
+    >
+      <defs>
+        <!--
+          Gradiente radial blanco → naranja.
+          cx/cy centrado en el logo (≈50%/48% del viewport).
+          r="68%" = el blanco domina el centro donde está la silueta del logo,
+          el naranja satura los bordes. Efecto "energía contenida en el logo".
+        -->
+        <!--
+          gradientUnits="userSpaceOnUse" + coordenadas en px calculadas por JS
+          = círculo perfecto sin deformación por aspect ratio del viewport.
+          cx/cy/r se setean desde initScrollSystem() en index.astro.
+          El radio se anima en sync con el zoom del logo (también desde JS).
+        -->
+        <radialGradient id="overlay-grad" gradientUnits="userSpaceOnUse"
+                        cx="0" cy="0" r="1">
+          <stop offset="0%"   stop-color="#FFFFFF"/>
+          <stop offset="60%"  stop-color="#FFFFFF"/>
+          <stop offset="85%"  stop-color="#001f4d"/>
+          <stop offset="100%" stop-color="#001433"/>
+        </radialGradient>
+
+        <mask id="logo-hero-mask">
+          <rect width="100%" height="100%" fill="white"/>
+          <g id="logo-hero-paths" fill="black">
+            <svg
+              viewBox="0 0 1199 680"
+              preserveAspectRatio="xMidYMid meet"
+              x="5%" y="10%"
+              width="90%" height="80%"
+            >
+              <Fragment set:html={logoPaths} />
+            </svg>
+          </g>
+        </mask>
+      </defs>
+
+      <!-- Gradiente blanco→naranja con recorte de logo. 100% opaco fuera. -->
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#overlay-grad)"
+        mask="url(#logo-hero-mask)"
+      />
+    </svg>
+  </div>
+)}

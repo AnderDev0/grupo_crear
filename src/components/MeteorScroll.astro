@@ -1,0 +1,107 @@
+---
+---
+
+<!--
+  MeteorScroll: transparent WebM video + fully self-contained scroll animation.
+
+  DOM hierarchy:
+    #meteor-container  (in index.astro) — GSAP owns levitation (y oscillation)
+      #meteor-outer    (this component) — layout wrapper
+        #meteor-stage  — perspective container (CSS, static)
+          #meteor-inner — GSAP owns all scroll-scrub transforms (rotation/drift/scale)
+            video       — loops natively, no JS control needed
+
+  Separation of concerns:
+    • index.astro  → perpetual levitation on #meteor-container, glow pulse
+    • This script  → scroll-scrub on #meteor-inner (rotation, drift, scale)
+  The two animations target different DOM nodes, so their transforms never
+  conflict or overwrite each other.
+-->
+<div id="meteor-outer" class="meteor-outer">
+  <div id="meteor-stage" class="meteor-stage">
+    <div id="meteor-core" class="meteor-inner">
+      <div class="w-full h-full flex items-center justify-center">
+        <video id="meteor-video" muted playsinline preload="auto" class="w-full h-full object-contain pointer-events-none">
+          <source src="/meteorogrupocrear_transp.webm" type="video/webm" />
+        </video>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .meteor-outer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .meteor-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+  }
+
+  .meteor-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+    transform-style: preserve-3d;
+  }
+</style>
+
+<script>
+  import { gsap } from '../utils/gsap-config';
+
+  window.addEventListener('intro:complete', () => {
+    const video = document.getElementById('meteor-video') as HTMLVideoElement | null;
+    const inner = document.getElementById('meteor-inner') as HTMLElement | null;
+
+    if (!video || !inner) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Ensure the video is strictly paused — frame scrubbing takes full control.
+    // autoplay and loop attributes are intentionally absent from the new markup.
+    video.pause();
+    video.currentTime = 0;
+
+    // Track 1 — Frame scrubbing: maps scroll progress directly to video time.
+    // scrub:0.1 keeps the video frame almost perfectly in sync with scroll
+    // position while still allowing the browser a tiny buffer to decode frames.
+    gsap.to(video, {
+      scrollTrigger: {
+        trigger:  '#hero-visual',
+        start:    'top top',
+        end:      '+=160%',
+        scrub:    0.1,
+        onUpdate: (self) => {
+          if (video.duration && isFinite(video.duration)) {
+            video.currentTime = self.progress * video.duration;
+          }
+        },
+      },
+    });
+
+    // Track 2 — 3D transforms: rotation, lateral drift, depth recession.
+    // scrub:1.2 gives a slight inertia so the transform lags pleasantly behind
+    // the frame scrub, reinforcing the sense of physical weight.
+    gsap.to(inner, {
+      rotation: '+=360',
+      xPercent: 15,
+      yPercent: 30,
+      scale:    0.7,
+      ease:     'none',
+      scrollTrigger: {
+        trigger:             '#hero-visual',
+        start:               'top top',
+        end:                 '+=160%',
+        scrub:               1.2,
+        invalidateOnRefresh: true,
+      },
+    });
+  }, { once: true });
+</script>

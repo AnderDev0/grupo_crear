@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* ── TEMA TAILWIND v4 ──────────────────────────────────────────
+   Exporta las variables de diseño de Grupo Crear como tokens CSS
+   para que las utilidades como bg-accent, text-bg, etc., funcionen.
+   ─────────────────────────────────────────────────────────────── */
+@theme {
+  --color-bg:       #001433;
+  --color-ink:      #04102a;
+  --color-bg2:      #00194a;
+  --color-accent:   #E84E1B;
+  --color-accent-d: #c23e12;
+
+  --font-sans: 'Sofia Sans', sans-serif;
+  --font-cond: 'Sofia Sans Condensed', 'Sofia Sans', sans-serif;
+
+  /* Ease personalizado disponible via transition-[ease-brand] */
+  --ease-brand: cubic-bezier(.16,1,.3,1);
+}
+
+/* ── INTRO OVERLAY — estilos que GSAP requiere como punto de partida ──
+   El resto de la animación del overlay es gestionado por LogoIntro.astro
+   ──────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  #intro-overlay {
+    /* z-index por encima de nav (300) y del cursor (10000) no aplica porque
+       la capa de entrada se elimina del DOM tras la animación.
+       600 es suficiente para cubrir todo el contenido de hero. */
+    z-index: 600;
+  }
+}
+
+/* ── MOTION FALLBACK global ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #intro-overlay   { display: none !important; }
+  .col-bg,
+  .col-card,
+  .col-meteor,
+  #logoWrap,
+  .menu li a,
+  .kick span,
+  .hero-in .ln span,
+  .hero-lead,
+  .hero-acts,
+  .scrolldown        { opacity: 1 !important; transform: none !important; }
+}

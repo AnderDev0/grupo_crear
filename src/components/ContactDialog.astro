@@ -1,0 +1,362 @@
+---
+---
+
+<dialog
+  id="contact-dialog"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="dialog-title"
+  style="
+    border:none;
+    background:transparent;
+    padding:0;
+    max-width:min(560px,95vw);
+    width:100%;
+    outline:none;
+  "
+>
+  <div
+    style="
+      background:var(--bg-secondary);
+      border:1px solid rgba(232,78,27,0.35);
+      border-radius:8px;
+      padding:clamp(1.5rem,4vw,2.5rem);
+      position:relative;
+      box-shadow:0 24px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(232,78,27,0.1);
+    "
+  >
+    <!-- Encabezado -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;">
+      <h2
+        id="dialog-title"
+        style="font-family:var(--font-condensed);font-size:1.6rem;font-weight:800;color:var(--text-primary);letter-spacing:-0.01em;"
+      >
+        Hablemos de tu proyecto
+      </h2>
+      <button
+        id="dialog-close"
+        type="button"
+        aria-label="Cerrar modal"
+        style="
+          background:none;
+          border:none;
+          color:var(--text-secondary);
+          cursor:none;
+          padding:0.25rem;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          border-radius:4px;
+          transition:color 0.2s;
+        "
+        onmouseenter="this.style.color='var(--accent)'"
+        onmouseleave="this.style.color='var(--text-secondary)'"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Formulario -->
+    <form id="contact-form" novalidate>
+      <div style="display:flex;flex-direction:column;gap:1.1rem;">
+
+        <!-- Nombre -->
+        <div class="field-group">
+          <label for="cf-nombre" class="field-label">Nombre completo <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+          <input
+            id="cf-nombre"
+            name="nombre"
+            type="text"
+            required
+            minlength="2"
+            maxlength="100"
+            autocomplete="name"
+            class="field-input"
+            placeholder="Tu nombre"
+          />
+          <span class="field-error" aria-live="polite" id="err-nombre"></span>
+        </div>
+
+        <!-- Email -->
+        <div class="field-group">
+          <label for="cf-email" class="field-label">Correo electrónico <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+          <input
+            id="cf-email"
+            name="email"
+            type="email"
+            required
+            maxlength="254"
+            autocomplete="email"
+            class="field-input"
+            placeholder="tu@correo.com"
+          />
+          <span class="field-error" aria-live="polite" id="err-email"></span>
+        </div>
+
+        <!-- Empresa -->
+        <div class="field-group">
+          <label for="cf-empresa" class="field-label">Empresa <span style="color:var(--text-secondary);font-weight:400;">(opcional)</span></label>
+          <input
+            id="cf-empresa"
+            name="empresa"
+            type="text"
+            maxlength="100"
+            autocomplete="organization"
+            class="field-input"
+            placeholder="Nombre de tu empresa"
+          />
+        </div>
+
+        <!-- Mensaje -->
+        <div class="field-group">
+          <label for="cf-mensaje" class="field-label">Mensaje <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+          <textarea
+            id="cf-mensaje"
+            name="mensaje"
+            required
+            minlength="10"
+            maxlength="2000"
+            rows="4"
+            class="field-input"
+            placeholder="Cuéntanos sobre tu proyecto..."
+            style="resize:vertical;min-height:100px;"
+          ></textarea>
+          <span class="field-error" aria-live="polite" id="err-mensaje"></span>
+        </div>
+
+        <!-- Respuesta del servidor -->
+        <div id="form-response" aria-live="assertive" style="display:none;padding:0.75rem 1rem;border-radius:4px;font-size:0.9rem;"></div>
+
+        <!-- Submit -->
+        <button
+          id="cf-submit"
+          type="submit"
+          style="
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:0.6rem;
+            background:var(--accent);
+            color:#fff;
+            font-family:var(--font-condensed);
+            font-size:1.05rem;
+            font-weight:700;
+            letter-spacing:0.04em;
+            text-transform:uppercase;
+            padding:0.85rem 2rem;
+            border:none;
+            border-radius:3px;
+            cursor:none;
+            width:100%;
+            margin-top:0.5rem;
+            transition:background 0.2s,box-shadow 0.2s;
+            position:relative;
+            overflow:hidden;
+          "
+          onmouseenter="if(!this.disabled){this.style.background='var(--accent-dark)';this.style.boxShadow='0 0 24px var(--accent-glow)'}"
+          onmouseleave="this.style.background='var(--accent)';this.style.boxShadow='none'"
+        >
+          <span id="cf-submit-text">Enviar mensaje</span>
+          <span id="cf-submit-spinner" style="display:none;" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="animation:spin 0.8s linear infinite;">
+              <circle cx="9" cy="9" r="7" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+              <path d="M9 2a7 7 0 0 1 7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </button>
+
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<style>
+  dialog::backdrop {
+    background: rgba(0, 10, 30, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  dialog[open] {
+    animation: dialog-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes dialog-in {
+    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0);    }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .field-label {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .field-input {
+    background: rgba(0, 20, 51, 0.7);
+    border: 1px solid rgba(143, 172, 200, 0.2);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    padding: 0.65rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .field-input::placeholder {
+    color: rgba(143, 172, 200, 0.4);
+  }
+
+  .field-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .field-input.invalid {
+    border-color: #e84e1b;
+  }
+
+  .field-error {
+    font-size: 0.78rem;
+    color: #ff7a5a;
+    min-height: 1em;
+    font-family: var(--font-sans);
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  (function () {
+    const dialog = document.getElementById('contact-dialog') as HTMLDialogElement | null;
+    const closeBtn = document.getElementById('dialog-close');
+    const form = document.getElementById('contact-form') as HTMLFormElement | null;
+    const submitBtn = document.getElementById('cf-submit') as HTMLButtonElement | null;
+    const submitText = document.getElementById('cf-submit-text');
+    const submitSpinner = document.getElementById('cf-submit-spinner');
+    const formResponse = document.getElementById('form-response');
+
+    if (!dialog || !closeBtn || !form || !submitBtn) return;
+
+    // --- Apertura / cierre ---
+    closeBtn.addEventListener('click', () => dialog.close());
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    // --- Focus trap ---
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button,input,textarea,select,[tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute('disabled'));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    // --- Validación visual inline ---
+    function validateField(input: HTMLInputElement | HTMLTextAreaElement): boolean {
+      const errEl = document.getElementById(`err-${input.name}`);
+      if (!input.validity.valid) {
+        input.classList.add('invalid');
+        if (errEl) errEl.textContent = input.validationMessage;
+        return false;
+      }
+      input.classList.remove('invalid');
+      if (errEl) errEl.textContent = '';
+      return true;
+    }
+
+    form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input,textarea').forEach((field) => {
+      field.addEventListener('blur', () => validateField(field));
+    });
+
+    // --- Envío ---
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input,textarea'));
+      const allValid = fields.map(validateField).every(Boolean);
+      if (!allValid) return;
+
+      const payload = {
+        nombre:  (form.querySelector<HTMLInputElement>('#cf-nombre')!).value.trim(),
+        email:   (form.querySelector<HTMLInputElement>('#cf-email')!).value.trim(),
+        empresa: (form.querySelector<HTMLInputElement>('#cf-empresa')!).value.trim() || undefined,
+        mensaje: (form.querySelector<HTMLTextAreaElement>('#cf-mensaje')!).value.trim(),
+      };
+
+      submitBtn.disabled = true;
+      if (submitText) submitText.textContent = 'Enviando...';
+      if (submitSpinner) submitSpinner.style.display = 'inline-flex';
+
+      try {
+        const res = await fetch('/api/contacto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (formResponse) {
+          formResponse.style.display = 'block';
+          if (res.ok) {
+            formResponse.textContent = data.message ?? '¡Mensaje enviado! Te contactaremos pronto.';
+            formResponse.style.background = 'rgba(27,232,100,0.12)';
+            formResponse.style.border = '1px solid rgba(27,232,100,0.3)';
+            formResponse.style.color = '#6effa0';
+            form.reset();
+            gsap.delayedCall(3, () => dialog?.close());
+          } else {
+            const errors = data.errors
+              ? Object.values(data.errors.fieldErrors).flat().join(' · ')
+              : 'Error al enviar. Intenta de nuevo.';
+            formResponse.textContent = errors;
+            formResponse.style.background = 'rgba(232,78,27,0.12)';
+            formResponse.style.border = '1px solid rgba(232,78,27,0.3)';
+            formResponse.style.color = '#ff7a5a';
+          }
+        }
+      } catch {
+        if (formResponse) {
+          formResponse.style.display = 'block';
+          formResponse.textContent = 'Error de conexión. Intenta de nuevo.';
+          formResponse.style.background = 'rgba(232,78,27,0.12)';
+          formResponse.style.border = '1px solid rgba(232,78,27,0.3)';
+          formResponse.style.color = '#ff7a5a';
+        }
+      } finally {
+        submitBtn.disabled = false;
+        if (submitText) submitText.textContent = 'Enviar mensaje';
+        if (submitSpinner) submitSpinner.style.display = 'none';
+      }
+    });
+  })();
+</script>

@@ -1,0 +1,73 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+
+let logoSvg = '';
+
+try {
+  const filepath = path.resolve('./public/nuevo-logo-Grupo-Crear-vector-hor.svg');
+  let raw = fs.readFileSync(filepath, 'utf-8');
+
+  // Strip XML declaration and Inkscape metadata block
+  raw = raw.replace(/<\?xml[\s\S]*?\?>/g, '').trim();
+  raw = raw.replace(/<metadata[\s\S]*?<\/metadata>/gi, '');
+
+  // ── Elimina el rectángulo de fondo azul (#001532) ─────────────────────────
+  // path12 = "M 0,0 H 898.944 V 509.999 H 0 Z" fill:#001532
+  // Sin él el logo flota sobre cualquier fondo —
+  // el color oscuro del nav se ve a través de la forma.
+  // [^>]* funciona aquí porque `>` no aparece dentro de un atributo
+  // y sí matchea saltos de línea en JS por ser una clase de negación.
+  raw = raw.replace(/<path[^>]*id="path12"[^>]*\/>/gi, '');
+
+  // ── Reescribe el tag <svg> de apertura ────────────────────────────────────
+  // • Elimina namespaces de Inkscape/DC/CC/RDF (innecesarios inline)
+  // • Elimina xml:space, version, id fijos
+  // • Sustituye el viewBox del artboard completo (1198×680) por uno recortado
+  //   que encuadra solo el cohete + "GRUPO CREAR" + tagline, eliminando
+  //   los márgenes vacíos. Coordenadas en px del espacio de pantalla del SVG.
+  // • Fuerza width/height al 100% del wrapper para que la escala la controle
+  //   el contenedor padre, no el SVG.
+  raw = raw.replace(
+    /<svg\b([^>]*)>/i,
+    (_match, attrs: string) => {
+      const cleaned = attrs
+        .replace(/\s+xmlns:[a-z]+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+xml:[a-z]+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+version\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+id\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+width\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+height\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+viewBox\s*=\s*["'][^"']*["']/gi, '');
+      return `<svg${cleaned} viewBox="215 242 790 212" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">`;
+    }
+  );
+
+  logoSvg = raw;
+} catch (_e) {
+  // Fallback de texto si el archivo SVG no está disponible en build
+  logoSvg = `<svg viewBox="0 0 152 50" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <text x="6" y="36" font-size="28" fill="#E84E1B" font-weight="900" font-family="sans-serif">CREAR</text>
+  </svg>`;
+}
+---
+
+
+<a
+  href="#hero"
+  class="brand flex items-center no-underline"
+  id="nav-brand"
+  aria-label="Grupo Crear — inicio"
+>
+  <!--
+    Ratio del viewBox recortado: 790 / 212 ≈ 3.726
+    height: 50px → width: 50 × 3.726 ≈ 186px
+    overflow:visible permite que el efecto líquido desborde levemente los bordes.
+  -->
+  <div
+    id="logoWrap"
+    style="height:50px;width:186px;overflow:visible;flex-shrink:0;"
+  >
+    <Fragment set:html={logoSvg} />
+  </div>
+</a>

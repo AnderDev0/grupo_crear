@@ -1,0 +1,150 @@
+---
+import { readFileSync } from 'node:fs';
+import { resolve }      from 'node:path';
+
+// Extrae SOLO los 4 paths naranja (class="b") — mismo método que LogoHeroMask.
+// Evita el rect de fondo, los <defs> y los conflictos de id #cp1.
+let logoPathsHTML = '';
+try {
+  const svgRaw  = readFileSync(resolve('public/logo-Grupo-Crear-vector_sintext.svg'), 'utf-8');
+  const matches = [...svgRaw.matchAll(/<path\s+class="b"[^>]*\/>/g)];
+  logoPathsHTML = matches.map(m => m[0].replace(/\s*class="[^"]*"/g, '')).join('\n');
+} catch (_) {}
+---
+
+<!--
+  Intro cinemático estilo Podium — Efecto Logo-Portal.
+
+  Fase 1 (HOLD 1.2s):
+    La silueta del logo Grupo Crear actúa como máscara negativa sobre un overlay
+    #001433. El hero (cards, meteor, glow) es visible ÚNICAMENTE dentro de la
+    forma del logo — exactamente como Podium muestra sus videos a través del
+    logo del corredor.
+
+  Fase 2 (ZOOM-THROUGH 1.6s):
+    La silueta del logo escala de 1× a 50× desde el centro del viewport.
+    Los "huecos" del logo se expanden hasta consumir el overlay completo,
+    dando la sensación de "entrar a través del logo" hacia el interior de la escena.
+
+  Fase 3 (FADE 0.35s):
+    El overlay se desvanece a opacity:0 para eliminar aliasing residual.
+    onComplete → revealScene() → dispatch 'intro:complete'.
+
+  Nota técnica crítica:
+    CSS positioning (top/left/transform) NO funciona en elementos <svg> dentro
+    de <mask>. El posicionamiento se hace con setAttribute x/y/width/height via JS
+    DESPUÉS de conocer las dimensiones del viewport. El SVG empieza en width=0/height=0
+    para prevenir el flash antes de que JS lo posicione.
+-->
+<div
+  id="intro-overlay"
+  aria-hidden="true"
+  style="position:fixed;inset:0;width:100vw;height:100svh;z-index:999999;pointer-events:auto;overflow:hidden;"
+>
+  <svg
+    id="intro-svg"
+    xmlns="http://www.w3.org/2000/svg"
+    style="position:absolute;inset:0;width:100%;height:100%;display:block;"
+    aria-hidden="true"
+  >
+    <defs>
+      <mask id="portal-mask">
+        <rect width="100%" height="100%" fill="white"/>
+        <g id="mask-logo-paths" fill="black">
+          <!--
+            IMPORTANTE: x, y, width, height son 0 por defecto.
+            JS los setea via setAttribute a los valores del viewport real.
+            CSS width/height/top/left NO funcionan dentro de un <mask> SVG.
+          -->
+          <svg
+            id="logo-paths-svg"
+            viewBox="0 0 1199 680"
+            preserveAspectRatio="xMidYMid meet"
+            x="0" y="0" width="0" height="0"
+          ><Fragment set:html={logoPathsHTML} /></svg>
+        </g>
+      </mask>
+    </defs>
+
+    <rect
+      id="intro-rect"
+      width="100%"
+      height="100%"
+      fill="#001433"
+      mask="url(#portal-mask)"
+    />
+  </svg>
+</div>
+
+<script>
+  async function bootIntro(): Promise<void> {
+    const { gsap } = await import('../utils/gsap-config');
+
+    const overlay       = document.getElementById('intro-overlay')   as HTMLElement    | null;
+    const maskLogoGroup = document.getElementById('mask-logo-paths') as SVGGElement    | null;
+    const logoSvg       = document.getElementById('logo-paths-svg')  as SVGSVGElement  | null;
+    const overlayRect   = document.getElementById('intro-rect')      as SVGRectElement | null;
+
+    function revealScene(): void {
+      if (overlay) {
+        overlay.style.display       = 'none';
+        overlay.style.pointerEvents = 'none';
+      }
+      window.dispatchEvent(new CustomEvent('intro:complete'));
+    }
+
+    // Guards
+    if (!overlay || !maskLogoGroup || !logoSvg || !overlayRect) { revealScene(); return; }
+    if (logoSvg.children.length === 0)                          { revealScene(); return; }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { revealScene(); return; }
+
+    // ── Posicionar el logo SVG via atributos (único método que funciona en <mask>) ──
+    // Centramos el logo al 55% del viewport width, manteniendo el aspect ratio 1199:680.
+    // Al 55% de 1440px: logoW=792px → logoH=449px → centrado vertical y horizontal.
+    const vw    = window.innerWidth;
+    const vh    = window.innerHeight;
+    const logoW = Math.round(vw * 0.55);
+    const logoH = Math.round(logoW / (1199 / 680));
+    const logoX = Math.round((vw - logoW) / 2);
+    const logoY = Math.round((vh - logoH) / 2);
+
+    logoSvg.setAttribute('x',      String(logoX));
+    logoSvg.setAttribute('y',      String(logoY));
+    logoSvg.setAttribute('width',  String(logoW));
+    logoSvg.setAttribute('height', String(logoH));
+
+    // ── Animación Logo-Portal ─────────────────────────────────────────────────
+    // delay:1.2s = Fase 1 (Hold) — el usuario ve el hero a través del logo.
+    //   El primer frame que ve es el logo como ventana hacia las cards y el meteor.
+    //   Sin este hold, la animación pasa demasiado rápido y no se aprecia el efecto.
+    //
+    // scale:50, svgOrigin centrado = Fase 2 (Zoom-Through) — las ventanas del logo
+    //   se expanden desde el centro hacia afuera, dando la sensación de "entrar"
+    //   a través del logo hacia la escena interior.
+    //
+    // '-=0.35' = Fase 3 (Fade) — se superpone con el final del zoom para suavizar
+    //   cualquier borde residual de anti-aliasing a escala extrema.
+    gsap.timeline({ onComplete: revealScene })
+      .to(maskLogoGroup, {
+        scale:     50,
+        svgOrigin: `${vw / 2} ${vh / 2}`,
+        duration:  1.6,
+        ease:      'power3.in',
+        delay:     1.2,
+      })
+      .to(overlayRect, {
+        opacity:  0,
+        duration: 0.35,
+        ease:     'power2.out',
+      }, '-=0.35');
+  }
+
+  // Espera a que el DOM esté completo antes de ejecutar.
+  // No se necesita doble rAF porque el posicionamiento es via setAttribute
+  // (no depende de bounding boxes calculados por el motor CSS).
+  if (document.readyState === 'complete') {
+    bootIntro();
+  } else {
+    window.addEventListener('load', bootIntro, { once: true });
+  }
+</script>
