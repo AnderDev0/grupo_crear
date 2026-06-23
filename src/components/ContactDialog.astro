@@ -1,9 +1,13 @@
 ---
 ---
 
+<!--
+  <dialog> nativo ya tiene role="dialog" implícito — no se repite (Primera Regla de ARIA).
+  aria-modal="true" indica a los lectores de pantalla que el contenido fuera está inactivo.
+  aria-labelledby vincula el título al dialog para que sea anunciado al abrirlo.
+-->
 <dialog
   id="contact-dialog"
-  role="dialog"
   aria-modal="true"
   aria-labelledby="dialog-title"
   style="
@@ -12,7 +16,6 @@
     padding:0;
     max-width:min(560px,95vw);
     width:100%;
-    outline:none;
   "
 >
   <div
@@ -41,18 +44,20 @@
           background:none;
           border:none;
           color:var(--text-secondary);
-          cursor:none;
-          padding:0.25rem;
+          padding:0.5rem;
           display:flex;
           align-items:center;
           justify-content:center;
           border-radius:4px;
           transition:color 0.2s;
+          min-width:44px;
+          min-height:44px;
         "
         onmouseenter="this.style.color='var(--accent)'"
         onmouseleave="this.style.color='var(--text-secondary)'"
       >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <!-- aria-hidden: el nombre accesible ya lo provee el aria-label del botón -->
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
           <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
       </button>
@@ -64,40 +69,60 @@
 
         <!-- Nombre -->
         <div class="field-group">
-          <label for="cf-nombre" class="field-label">Nombre completo <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+          <label for="cf-nombre" class="field-label">
+            Nombre completo
+            <!-- aria-hidden: el * es decorativo; "required" en el input comunica la obligatoriedad -->
+            <span aria-hidden="true" style="color:var(--accent);">*</span>
+          </label>
+          <!--
+            aria-describedby apunta al span de error: cuando el lector de pantalla
+            enfoca el campo con un error existente, lo anuncia automáticamente.
+            aria-required refuerza la obligatoriedad para lectores que no interpretan
+            el atributo HTML required.
+          -->
           <input
             id="cf-nombre"
             name="nombre"
             type="text"
             required
+            aria-required="true"
+            aria-describedby="err-nombre"
             minlength="2"
             maxlength="100"
             autocomplete="name"
             class="field-input"
             placeholder="Tu nombre"
           />
-          <span class="field-error" aria-live="polite" id="err-nombre"></span>
+          <span class="field-error" aria-live="polite" id="err-nombre" role="alert"></span>
         </div>
 
         <!-- Email -->
         <div class="field-group">
-          <label for="cf-email" class="field-label">Correo electrónico <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+          <label for="cf-email" class="field-label">
+            Correo electrónico
+            <span aria-hidden="true" style="color:var(--accent);">*</span>
+          </label>
           <input
             id="cf-email"
             name="email"
             type="email"
             required
+            aria-required="true"
+            aria-describedby="err-email"
             maxlength="254"
             autocomplete="email"
             class="field-input"
             placeholder="tu@correo.com"
           />
-          <span class="field-error" aria-live="polite" id="err-email"></span>
+          <span class="field-error" aria-live="polite" id="err-email" role="alert"></span>
         </div>
 
         <!-- Empresa -->
         <div class="field-group">
-          <label for="cf-empresa" class="field-label">Empresa <span style="color:var(--text-secondary);font-weight:400;">(opcional)</span></label>
+          <label for="cf-empresa" class="field-label">
+            Empresa
+            <span style="color:var(--text-secondary);font-weight:400;">(opcional)</span>
+          </label>
           <input
             id="cf-empresa"
             name="empresa"
@@ -111,11 +136,16 @@
 
         <!-- Mensaje -->
         <div class="field-group">
-          <label for="cf-mensaje" class="field-label">Mensaje <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+          <label for="cf-mensaje" class="field-label">
+            Mensaje
+            <span aria-hidden="true" style="color:var(--accent);">*</span>
+          </label>
           <textarea
             id="cf-mensaje"
             name="mensaje"
             required
+            aria-required="true"
+            aria-describedby="err-mensaje"
             minlength="10"
             maxlength="2000"
             rows="4"
@@ -123,13 +153,13 @@
             placeholder="Cuéntanos sobre tu proyecto..."
             style="resize:vertical;min-height:100px;"
           ></textarea>
-          <span class="field-error" aria-live="polite" id="err-mensaje"></span>
+          <span class="field-error" aria-live="polite" id="err-mensaje" role="alert"></span>
         </div>
 
-        <!-- Respuesta del servidor -->
-        <div id="form-response" aria-live="assertive" style="display:none;padding:0.75rem 1rem;border-radius:4px;font-size:0.9rem;"></div>
+        <!-- Respuesta del servidor: assertive para anuncio inmediato de éxito/error -->
+        <div id="form-response" aria-live="assertive" aria-atomic="true" style="display:none;padding:0.75rem 1rem;border-radius:4px;font-size:0.9rem;"></div>
 
-        <!-- Submit -->
+        <!-- Submit: min-height 44px garantiza touch target accesible -->
         <button
           id="cf-submit"
           type="submit"
@@ -146,9 +176,9 @@
             letter-spacing:0.04em;
             text-transform:uppercase;
             padding:0.85rem 2rem;
+            min-height:44px;
             border:none;
             border-radius:3px;
-            cursor:none;
             width:100%;
             margin-top:0.5rem;
             transition:background 0.2s,box-shadow 0.2s;
@@ -192,6 +222,12 @@
     to { transform: rotate(360deg); }
   }
 
+  /* Foco visible: nunca outline:none sin reemplazo. box-shadow provee indicador claro */
+  dialog:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+
   .field-group {
     display: flex;
     flex-direction: column;
@@ -215,7 +251,6 @@
     font-family: var(--font-sans);
     font-size: 1rem;
     padding: 0.65rem 0.9rem;
-    outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     width: 100%;
   }
@@ -224,9 +259,17 @@
     color: rgba(143, 172, 200, 0.4);
   }
 
+  /* outline reemplazado por box-shadow — igualmente visible, más estético */
   .field-input:focus {
+    outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  /* Foco con teclado: contorno adicional para mayor visibilidad */
+  .field-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
   }
 
   .field-input.invalid {
@@ -245,24 +288,51 @@
   import { gsap } from 'gsap';
 
   (function () {
-    const dialog = document.getElementById('contact-dialog') as HTMLDialogElement | null;
-    const closeBtn = document.getElementById('dialog-close');
-    const form = document.getElementById('contact-form') as HTMLFormElement | null;
-    const submitBtn = document.getElementById('cf-submit') as HTMLButtonElement | null;
-    const submitText = document.getElementById('cf-submit-text');
+    const dialog      = document.getElementById('contact-dialog') as HTMLDialogElement | null;
+    const closeBtn    = document.getElementById('dialog-close');
+    const form        = document.getElementById('contact-form') as HTMLFormElement | null;
+    const submitBtn   = document.getElementById('cf-submit') as HTMLButtonElement | null;
+    const submitText  = document.getElementById('cf-submit-text');
     const submitSpinner = document.getElementById('cf-submit-spinner');
-    const formResponse = document.getElementById('form-response');
+    const formResponse  = document.getElementById('form-response');
 
     if (!dialog || !closeBtn || !form || !submitBtn) return;
 
-    // --- Apertura / cierre ---
-    closeBtn.addEventListener('click', () => dialog.close());
+    // Guarda referencia al elemento que tenía el foco antes de abrir el modal.
+    // Se restaura al cerrar para que el usuario de teclado retome su posición.
+    let previousFocus: HTMLElement | null = null;
 
+    // MutationObserver detecta cuando el atributo "open" se agrega al <dialog>.
+    // showModal() es síncrono, así que el atributo ya está presente en el callback.
+    const openObserver = new MutationObserver(() => {
+      if (dialog.open) {
+        previousFocus = document.activeElement as HTMLElement;
+        // Mueve el foco al primer campo del formulario al abrir el modal
+        const firstInput = dialog.querySelector<HTMLElement>('input,textarea');
+        if (firstInput) firstInput.focus();
+      }
+    });
+    openObserver.observe(dialog, { attributes: true, attributeFilter: ['open'] });
+
+    function closeDialog() {
+      dialog.close();
+      // Restaura el foco al elemento que abrió el modal
+      if (previousFocus) previousFocus.focus();
+    }
+
+    closeBtn.addEventListener('click', closeDialog);
+
+    // Cierra al hacer clic en el backdrop (fuera del contenido del dialog)
     dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) dialog.close();
+      if (e.target === dialog) closeDialog();
     });
 
-    // --- Focus trap ---
+    // Restaura foco también cuando se cierra con la tecla Escape (nativo del <dialog>)
+    dialog.addEventListener('close', () => {
+      if (previousFocus) previousFocus.focus();
+    });
+
+    // Focus trap: mantiene el foco dentro del modal con Tab y Shift+Tab
     dialog.addEventListener('keydown', (e) => {
       if (e.key !== 'Tab') return;
       const focusable = Array.from(
@@ -272,23 +342,26 @@
       ).filter((el) => !el.hasAttribute('disabled'));
       if (focusable.length === 0) return;
       const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const last  = focusable[focusable.length - 1];
       if (e.shiftKey) {
         if (document.activeElement === first) { e.preventDefault(); last.focus(); }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
       }
     });
 
-    // --- Validación visual inline ---
+    // Validación visual inline
     function validateField(input: HTMLInputElement | HTMLTextAreaElement): boolean {
       const errEl = document.getElementById(`err-${input.name}`);
       if (!input.validity.valid) {
         input.classList.add('invalid');
+        // aria-invalid comunica el estado de error al lector de pantalla
+        input.setAttribute('aria-invalid', 'true');
         if (errEl) errEl.textContent = input.validationMessage;
         return false;
       }
       input.classList.remove('invalid');
+      input.setAttribute('aria-invalid', 'false');
       if (errEl) errEl.textContent = '';
       return true;
     }
@@ -297,12 +370,12 @@
       field.addEventListener('blur', () => validateField(field));
     });
 
-    // --- Envío ---
+    // Envío
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input,textarea'));
-      const allValid = fields.map(validateField).every(Boolean);
+      const fields    = Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input,textarea'));
+      const allValid  = fields.map(validateField).every(Boolean);
       if (!allValid) return;
 
       const payload = {
@@ -313,48 +386,47 @@
       };
 
       submitBtn.disabled = true;
-      if (submitText) submitText.textContent = 'Enviando...';
-      if (submitSpinner) submitSpinner.style.display = 'inline-flex';
+      if (submitText)    submitText.textContent          = 'Enviando...';
+      if (submitSpinner) submitSpinner.style.display     = 'inline-flex';
 
       try {
-        const res = await fetch('/api/contacto', {
+        const res  = await fetch('/api/contacto', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-
         const data = await res.json();
 
         if (formResponse) {
           formResponse.style.display = 'block';
           if (res.ok) {
-            formResponse.textContent = data.message ?? '¡Mensaje enviado! Te contactaremos pronto.';
-            formResponse.style.background = 'rgba(27,232,100,0.12)';
-            formResponse.style.border = '1px solid rgba(27,232,100,0.3)';
-            formResponse.style.color = '#6effa0';
+            formResponse.textContent       = data.message ?? '¡Mensaje enviado! Te contactaremos pronto.';
+            formResponse.style.background  = 'rgba(27,232,100,0.12)';
+            formResponse.style.border      = '1px solid rgba(27,232,100,0.3)';
+            formResponse.style.color       = '#6effa0';
             form.reset();
-            gsap.delayedCall(3, () => dialog?.close());
+            gsap.delayedCall(3, closeDialog);
           } else {
             const errors = data.errors
               ? Object.values(data.errors.fieldErrors).flat().join(' · ')
               : 'Error al enviar. Intenta de nuevo.';
-            formResponse.textContent = errors;
-            formResponse.style.background = 'rgba(232,78,27,0.12)';
-            formResponse.style.border = '1px solid rgba(232,78,27,0.3)';
-            formResponse.style.color = '#ff7a5a';
+            formResponse.textContent       = errors as string;
+            formResponse.style.background  = 'rgba(232,78,27,0.12)';
+            formResponse.style.border      = '1px solid rgba(232,78,27,0.3)';
+            formResponse.style.color       = '#ff7a5a';
           }
         }
       } catch {
         if (formResponse) {
-          formResponse.style.display = 'block';
-          formResponse.textContent = 'Error de conexión. Intenta de nuevo.';
-          formResponse.style.background = 'rgba(232,78,27,0.12)';
-          formResponse.style.border = '1px solid rgba(232,78,27,0.3)';
-          formResponse.style.color = '#ff7a5a';
+          formResponse.style.display     = 'block';
+          formResponse.textContent       = 'Error de conexión. Intenta de nuevo.';
+          formResponse.style.background  = 'rgba(232,78,27,0.12)';
+          formResponse.style.border      = '1px solid rgba(232,78,27,0.3)';
+          formResponse.style.color       = '#ff7a5a';
         }
       } finally {
         submitBtn.disabled = false;
-        if (submitText) submitText.textContent = 'Enviar mensaje';
+        if (submitText)    submitText.textContent      = 'Enviar mensaje';
         if (submitSpinner) submitSpinner.style.display = 'none';
       }
     });

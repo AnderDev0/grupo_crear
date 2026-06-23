@@ -21,7 +21,8 @@
   <div id="meteor-stage" class="meteor-stage">
     <div id="meteor-core" class="meteor-inner">
       <div class="w-full h-full flex items-center justify-center">
-        <video id="meteor-video" muted playsinline preload="auto" class="w-full h-full object-contain pointer-events-none">
+        <!-- aria-hidden: video puramente decorativo — evita la regla video-caption de axe-core -->
+      <video id="meteor-video" muted playsinline preload="auto" class="w-full h-full object-contain pointer-events-none" aria-hidden="true">
           <source src="/meteorogrupocrear_transp.webm" type="video/webm" />
         </video>
       </div>

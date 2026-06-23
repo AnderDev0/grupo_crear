@@ -1,0 +1,221 @@
+---
+// Año calculado en build time. El script del cliente lo actualiza en runtime
+// por si el sitio no se rebuilds el 1 de enero.
+const year = new Date().getFullYear();
+
+// ── Vínculos legales ──────────────────────────────────────────────────────────
+// REGLA: cambiar active: false → true SOLO cuando la página esté
+// redactada, revisada y publicada. Nunca activar un enlace hacia una página vacía.
+const legalLinks: { label: string; href: string; active: boolean }[] = [
+  { label: 'Política de privacidad',            href: '/politica-de-privacidad',           active: false },
+  { label: 'Términos y condiciones',            href: '/terminos-y-condiciones',           active: false },
+  { label: 'Tratamiento de datos personales',   href: '/politica-de-tratamiento-de-datos', active: false },
+  // Descomentar SOLO si el sitio implementa herramientas que requieren consentimiento:
+  // { label: 'Política de cookies', href: '/politica-de-cookies', active: false },
+];
+
+const activeLinks = legalLinks.filter((l) => l.active);
+---
+
+<footer>
+
+  <!-- ── Bloque superior: marca + columnas de navegación ── -->
+  <div class="foot-top">
+
+    <div class="foot-brand">
+      <!-- aria-hidden en el punto decorativo: es ornamental, no contenido -->
+      <b>CREAR<em aria-hidden="true">.</em></b>
+      <p>Agencia de publicidad y soluciones gráficas. Hacemos que tu marca se vea, se recuerde y venda.</p>
+    </div>
+
+    <div class="foot-cols">
+
+      <!-- aria-label identifica cada bloque nav para lectores de pantalla -->
+      <nav aria-label="Servicios">
+        <h6 class="fcol-head">Servicios</h6>
+        <!-- role="list": Tailwind/reset quitan list-style; este atributo preserva
+             la semántica de lista en VoiceOver (Safari) -->
+        <ul role="list" class="fcol-list">
+          <li><a href="#serv">Gran Formato</a></li>
+          <li><a href="#serv">Material POP</a></li>
+          <li><a href="#serv">Branding</a></li>
+          <li><a href="#serv">Diseño Web</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Estudio">
+        <h6 class="fcol-head">Estudio</h6>
+        <ul role="list" class="fcol-list">
+          <li><a href="#nos">Nosotros</a></li>
+          <li><a href="#port">Trabajo</a></li>
+          <li><a href="#cto">Contacto</a></li>
+        </ul>
+      </nav>
+
+      <!-- Redes: aún sin URL definitiva — href="#" marcados como pendientes -->
+      <div>
+        <h6 class="fcol-head">Síguenos</h6>
+        <ul role="list" class="fcol-list">
+          <li>
+            <!-- aria-label indica destino cuando la URL sea real; actualizar al activar -->
+            <a href="#" aria-label="Instagram de Grupo Crear (próximamente)" rel="noopener noreferrer">Instagram</a>
+          </li>
+          <li>
+            <a href="#" aria-label="LinkedIn de Grupo Crear (próximamente)" rel="noopener noreferrer">LinkedIn</a>
+          </li>
+          <li>
+            <a href="#" aria-label="Behance de Grupo Crear (próximamente)" rel="noopener noreferrer">Behance</a>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Vínculos legales ──────────────────────────────────────────────────────
+       Solo se renderizan si al menos un enlace tiene active: true.
+       La nav no aparece en el DOM cuando todos están inactivos → no hay
+       enlaces muertos ni secciones vacías en producción.
+  ────────────────────────────────────────────────────────────────────────── -->
+  {activeLinks.length > 0 && (
+    <nav aria-label="Vínculos legales" class="foot-legal-nav">
+      <ul role="list" class="foot-legal-list">
+        {activeLinks.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )}
+
+  <!-- ── Copyright ── -->
+  <div class="foot-bot">
+    <p class="foot-copyright">
+      <!--
+        span#foot-year: el script actualiza el texto en runtime.
+        El valor del frontmatter ({year}) es el fallback si JS está deshabilitado.
+      -->
+      © <span id="foot-year">{year}</span> Grupo Crear. Todos los derechos reservados.
+    </p>
+    <span class="foot-location">Bogotá · Colombia</span>
+  </div>
+
+  <!-- ── Crédito de desarrollo ─────────────────────────────────────────────────
+       <small> = semántica HTML de "letra pequeña / nota de pie".
+       Sin enlace: no hay autorización para enlazar sitios de terceros.
+       Jerarquía visual intencional: tamaño y opacidad inferiores a copyright y legal.
+       aria-label mejora la lectura en screen readers ("N&O SOFTWARE" → "N and O Software").
+  ────────────────────────────────────────────────────────────────────────── -->
+  <small class="foot-credit" aria-label="Desarrollo web: N and O Software">N&amp;O SOFTWARE</small>
+
+</footer>
+
+<style is:global>
+  /*
+    CRÍTICO: Layout.astro declara nav{position:fixed;inset:0 0 auto 0;z-index:300;...}
+    apuntando al header. Esa regla (especificidad 0,0,1) se aplica a TODOS los <nav>
+    de la página. footer nav (especificidad 0,0,2) la sobreescribe sin !important.
+    Se resetean todas las propiedades que el selector global establece.
+  */
+  footer nav {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    height: auto;
+    display: block;
+    align-items: normal;
+    justify-content: normal;
+    padding: 0;
+    transition: none;
+    border-bottom: none;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  /* ── Columnas del footer ─────────────────────────────────────────────── */
+  .fcol-head {
+    font-family: 'Sofia Sans Condensed', sans-serif;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--w40);
+    margin-bottom: 16px;
+  }
+  .fcol-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .fcol-list a {
+    display: block;
+    color: var(--w60);
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 11px;
+    transition: color .3s;
+  }
+  .fcol-list a:hover { color: var(--n); }
+  /* Foco visible: contorno claro sobre fondo oscuro — nunca outline:none sin reemplazo */
+  .fcol-list a:focus-visible {
+    outline: 2px solid var(--n);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* ── Vínculos legales ────────────────────────────────────────────────── */
+  .foot-legal-nav {
+    border-top: 1px solid var(--w06);
+    padding: 18px 0 4px;
+  }
+  .foot-legal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+  }
+  .foot-legal-list a {
+    color: rgba(255,255,255,.3);
+    text-decoration: none;
+    font-size: 12px;
+    font-family: 'Sofia Sans', sans-serif;
+    transition: color .25s;
+  }
+  .foot-legal-list a:hover { color: var(--w60); }
+  .foot-legal-list a:focus-visible {
+    outline: 2px solid var(--n);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* ── Copyright ───────────────────────────────────────────────────────── */
+  /* foot-bot de Layout.astro ya tiene display:flex + color:var(--w40) */
+  .foot-copyright { margin: 0; }
+
+  /* ── Crédito de desarrollo ───────────────────────────────────────────── */
+  /* Tamaño, opacidad y peso deliberadamente inferiores al copyright */
+  .foot-credit {
+    display: block;
+    margin-top: 10px;
+    font-family: 'Sofia Sans Condensed', sans-serif;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.14);
+    font-weight: 400;
+  }
+
+  @media (max-width: 680px) {
+    .foot-legal-list { gap: 6px 14px; }
+    .foot-legal-nav  { padding: 14px 0 2px; }
+  }
+</style>
+
+<script>
+  // Garantiza que el año sea el actual independientemente del último build date.
+  const el = document.getElementById('foot-year');
+  if (el) el.textContent = String(new Date().getFullYear());
+</script>

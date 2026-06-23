@@ -5,6 +5,7 @@ import RocketCursor from '../components/RocketCursor.astro';
 import ContactDialog from '../components/ContactDialog.astro';
 import MeteorScroll from '../components/MeteorScroll.astro';
 import LogoHeroMask from '../components/LogoHeroMask.astro';
+import Footer from '../components/Footer.astro';
 ---
 
 <Layout
@@ -469,39 +470,7 @@ import LogoHeroMask from '../components/LogoHeroMask.astro';
   <!-- ═══════════════════════════════════════════════
        FOOTER
   ═══════════════════════════════════════════════ -->
-  <footer>
-    <div class="foot-top">
-      <div class="foot-brand">
-        <b>CREAR<em>.</em></b>
-        <p>Agencia de publicidad y soluciones gráficas. Hacemos que tu marca se vea, se recuerde y venda.</p>
-      </div>
-      <div class="foot-cols">
-        <div class="fcol">
-          <h6>Servicios</h6>
-          <a href="#serv">Gran Formato</a>
-          <a href="#serv">Material POP</a>
-          <a href="#serv">Branding</a>
-          <a href="#serv">Diseño Web</a>
-        </div>
-        <div class="fcol">
-          <h6>Estudio</h6>
-          <a href="#nos">Nosotros</a>
-          <a href="#port">Trabajo</a>
-          <a href="#cto">Contacto</a>
-        </div>
-        <div class="fcol">
-          <h6>Síguenos</h6>
-          <a href="#" rel="noopener noreferrer">Instagram</a>
-          <a href="#" rel="noopener noreferrer">LinkedIn</a>
-          <a href="#" rel="noopener noreferrer">Behance</a>
-        </div>
-      </div>
-    </div>
-    <div class="foot-bot">
-      <span>© 2025 Grupo Crear. Todos los derechos reservados.</span>
-      <span>Bogotá · Colombia</span>
-    </div>
-  </footer>
+  <Footer />
 
   <!-- Modal de contacto (popup alternativo) -->
   <ContactDialog />
