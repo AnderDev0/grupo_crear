@@ -10,6 +10,14 @@ const todasFotos = servicios.flatMap(s =>
   s.fotos.map(f => ({ src: f.src, alt: f.alt, slug: s.slug, cat: s.nombreCorto }))
 );
 const hayFotos = todasFotos.length > 0;
+
+// Film strips: 5 columnas en "Todos", 4 cuando hay filtro activo.
+// Velocidades lentas y asincrónicas → efecto carrete de film orgánico.
+const STRIP_COLS = 5;
+const stripColSpeeds = [52, 68, 44, 60, 50]; // segundos por loop (más lentos)
+const stripColFotos  = Array.from({ length: STRIP_COLS }, (_, ci) =>
+  todasFotos.filter((_, i) => i % STRIP_COLS === ci)
+);
 ---
 
 <Layout
@@ -172,29 +180,34 @@ const hayFotos = todasFotos.length > 0;
       </div>
 
       {hayFotos ? (
-        <>
-          <div class="gal-grid" id="galGrid">
-            {todasFotos.slice(0, 24).map(f => (
-              <div class="gal-item" data-cat={f.slug}>
-                <div class="gal-protect" aria-hidden="true"></div>
-                <img
-                  src={f.src}
-                  alt={f.alt}
-                  loading="lazy"
-                  draggable="false"
-                />
-                <span class="gal-badge">{f.cat}</span>
+        /* ── Film Strips: columnas que se mueven en direcciones alternas ── */
+        <div class="gal-strip" id="galStrip">
+          {stripColFotos.map((colFotos, ci) => colFotos.length > 0 && (
+            <div
+              class={`gal-col gal-col-${ci % 2 === 0 ? 'up' : 'down'}`}
+              style={`--spd:${stripColSpeeds[ci]}s`}
+            >
+              <div class="gal-track">
+                {/* Set A — ítems reales */}
+                {colFotos.map(f => (
+                  <div class="gal-si" data-cat={f.slug}>
+                    <div class="gal-protect" aria-hidden="true"></div>
+                    <img src={f.src} alt={f.alt} loading="lazy" draggable="false" />
+                    <span class="gal-badge">{f.cat}</span>
+                  </div>
+                ))}
+                {/* Set B — duplicado para loop sin costura */}
+                {colFotos.map(f => (
+                  <div class="gal-si" data-cat={f.slug} aria-hidden="true">
+                    <div class="gal-protect" aria-hidden="true"></div>
+                    <img src={f.src} alt="" loading="lazy" draggable="false" />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {todasFotos.length > 24 && (
-            <div class="gal-more-row">
-              <button class="btn-line" id="galMore">Ver más proyectos →</button>
             </div>
-          )}
-        </>
+          ))}
+        </div>
       ) : (
-        <!-- Estado vacío: fotos se agregan en src/data/servicios.ts -->
         <div class="gal-empty r" data-d="2">
           <p>El portafolio fotográfico se cargará próximamente.</p>
           <span>Agrega las rutas en <code>src/data/servicios.ts</code> → campo <code>fotos[]</code></span>
@@ -524,7 +537,7 @@ const hayFotos = todasFotos.length > 0;
   .bc-01 { grid-row: span 1; }
 }
 
-/* ── GALERÍA ── */
+/* ── GALERÍA FILM STRIPS ── */
 #galeria { background: var(--bg); }
 
 .gal-header { margin-bottom: clamp(28px,4vw,48px); }
@@ -538,76 +551,116 @@ const hayFotos = todasFotos.length > 0;
 .gal-pill {
   font-family: 'Sofia Sans Condensed', sans-serif;
   font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--w60);
-  border: 1px solid var(--w12); border-radius: 100px;
-  padding: 9px 22px;
+  color: var(--w60); border: 1px solid var(--w12);
+  border-radius: 100px; padding: 9px 22px;
   background: transparent; cursor: none;
   transition: .35s var(--ease);
 }
 .gal-pill:hover { border-color: rgba(232,78,27,.4); color: #fff; }
 .gal-pill.active { background: var(--n); border-color: var(--n); color: #fff; }
 
-.gal-grid {
-  columns: 4;
-  column-gap: clamp(10px,1.2vw,14px);
-  margin-top: clamp(28px,4vw,48px);
-}
-.gal-item {
-  position: relative;
-  break-inside: avoid;
-  border-radius: 8px;
+/* Contenedor de tiras */
+.gal-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);   /* 5 cols — "Todos" */
+  gap: clamp(8px, 1vw, 12px);
+  height: 90vh;
+  min-height: 560px;
   overflow: hidden;
-  margin-bottom: clamp(10px,1.2vw,14px);
+  margin-top: clamp(28px,4vw,48px);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%);
 }
-.gal-item img {
-  width: 100%; height: auto; display: block;
-  transition: transform .8s var(--ease);
+/* 4 cols cuando hay filtro activo — oculta la 5ª columna */
+.gal-strip.is-filtered {
+  grid-template-columns: repeat(4, 1fr);
+}
+.gal-strip.is-filtered .gal-col:last-child {
+  display: none;
+}
+
+.gal-col { overflow: hidden; position: relative; }
+
+.gal-track {
+  display: flex; flex-direction: column;
+  gap: clamp(8px, 1vw, 12px);
+  will-change: transform;
+}
+
+/* Columnas impares suben, pares bajan */
+.gal-col-up .gal-track   { animation: strip-up   var(--spd,28s) linear infinite; }
+.gal-col-down .gal-track {
+  animation: strip-down var(--spd,32s) linear infinite;
+  animation-delay: calc(var(--spd,32s) * -0.5); /* offset para quiebre visual */
+}
+.gal-col:hover .gal-track          { animation-play-state: paused; }
+.gal-strip.is-filtered .gal-track  { animation-play-state: paused; }
+
+@keyframes strip-up {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+@keyframes strip-down {
+  from { transform: translateY(-50%); }
+  to   { transform: translateY(0); }
+}
+
+/* Ítem dentro de la tira */
+.gal-si {
+  position: relative; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+  transition: opacity .45s var(--ease), transform .45s var(--ease);
+}
+.gal-si.gal-si-hidden { opacity: .06; transform: scale(.96); pointer-events: none; }
+/* Imágenes con alturas variadas — patrón de 6 para ritmo visual orgánico */
+.gal-si img {
+  width: 100%; display: block;
+  object-fit: cover;
   pointer-events: none; -webkit-user-drag: none;
+  transition: transform .9s var(--ease);
 }
-.gal-item:hover img { transform: scale(1.05); }
+.gal-si:hover img { transform: scale(1.04); }
+
+/* Patrón rotativo de 6 alturas:
+   cuadrados, rectangulos altos, y proporciones intermedias */
+.gal-si:nth-child(6n+1) img { height: clamp(180px,17vw,260px); }   /* medio-alto */
+.gal-si:nth-child(6n+2) img { height: clamp(140px,13vw,190px); }   /* casi cuadrado */
+.gal-si:nth-child(6n+3) img { height: clamp(240px,23vw,340px); }   /* alto / retrato */
+.gal-si:nth-child(6n+4) img { height: clamp(150px,14vw,200px); }   /* cuadrado */
+.gal-si:nth-child(6n+5) img { height: clamp(200px,19vw,280px); }   /* medio */
+.gal-si:nth-child(6n+6) img { height: clamp(110px,10vw,160px); }   /* panorámico / bajo */
+
 .gal-protect { position: absolute; inset: 0; z-index: 2; }
+
 .gal-badge {
   position: absolute; bottom: 12px; left: 14px; z-index: 3;
   font-family: 'Sofia Sans Condensed', sans-serif;
   font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--n);
-  background: rgba(0,16,42,.85);
-  border: 1px solid rgba(232,78,27,.3);
-  border-radius: 100px; padding: 4px 12px;
-  opacity: 0; transform: translateY(6px);
-  transition: .35s var(--ease);
+  color: var(--n); background: rgba(0,16,42,.82);
+  border: 1px solid rgba(232,78,27,.3); border-radius: 100px; padding: 4px 12px;
+  opacity: 0; transform: translateY(6px); transition: .35s var(--ease);
 }
-.gal-item:hover .gal-badge { opacity: 1; transform: none; }
+.gal-si:hover .gal-badge { opacity: 1; transform: none; }
 
-.gal-more-row { text-align: center; margin-top: clamp(28px,4vw,48px); }
-
-/* Spotlight de cursor — naranja sutil que sigue el mouse */
-.gal-item::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  opacity: 0;
-  background: radial-gradient(180px at var(--mx,50%) var(--my,50%), rgba(232,78,27,.13), transparent 70%);
+/* Spotlight naranja por cursor */
+.gal-si::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  opacity: 0; border-radius: inherit;
+  background: radial-gradient(160px at var(--mx,50%) var(--my,50%), rgba(232,78,27,.12), transparent 70%);
   transition: opacity .3s;
-  pointer-events: none;
-  border-radius: inherit;
 }
-.gal-item:hover::after { opacity: 1; }
+.gal-si:hover::after { opacity: 1; }
 
 .gal-empty {
-  margin-top: clamp(28px,4vw,48px);
-  padding: clamp(40px,6vw,80px) 0;
-  text-align: center;
-  border: 1px dashed var(--w12);
-  border-radius: 10px;
+  margin-top: clamp(28px,4vw,48px); padding: clamp(40px,6vw,80px) 0;
+  text-align: center; border: 1px dashed var(--w12); border-radius: 10px;
 }
 .gal-empty p { color: var(--w60); font-size: 16px; margin-bottom: 12px; }
 .gal-empty span { font-size: 13px; color: var(--w40); }
 .gal-empty code { color: var(--n); background: rgba(232,78,27,.08); border: 1px solid rgba(232,78,27,.2); padding: 2px 8px; border-radius: 4px; font-family: monospace; }
 
-@media (max-width: 1024px) { .gal-grid { columns: 3; } }
-@media (max-width: 680px)  { .gal-grid { columns: 2; } }
+@media (max-width: 1280px) { .gal-strip { grid-template-columns: repeat(4, 1fr); } .gal-strip.is-filtered { grid-template-columns: repeat(3, 1fr); } .gal-strip .gal-col:last-child { display: block; } .gal-strip.is-filtered .gal-col:last-child { display: none; } }
+@media (max-width: 900px)  { .gal-strip { grid-template-columns: repeat(3, 1fr) !important; height: 76vh; } .gal-strip .gal-col:last-child,.gal-strip.is-filtered .gal-col:last-child { display: block; } }
+@media (max-width: 580px)  { .gal-strip { grid-template-columns: repeat(2, 1fr) !important; height: 62vh; } }
 
 /* ── CTA DOBLE ── */
 #cto-serv {
@@ -645,7 +698,7 @@ const hayFotos = todasFotos.length > 0;
      SCRIPTS
 ════════════════════════════════════════════════════════════ -->
 <script>
-  import { gsap, ScrollTrigger, Flip } from '../../utils/gsap-config';
+  import { gsap, ScrollTrigger } from '../../utils/gsap-config';
 
   /* ── 1. ANIMACIÓN DE ENTRADA DEL HERO ──────────────────── */
   const prefersRM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -728,73 +781,40 @@ const hayFotos = todasFotos.length > 0;
     });
   });
 
-  /* ── 4. GALERÍA — GSAP FLIP FILTER ─────────────────────── */
-  const pills   = document.querySelectorAll<HTMLButtonElement>('.gal-pill');
-  const items   = document.querySelectorAll<HTMLElement>('.gal-item');
-  let   current = '*';
+  /* ── 4. FILM STRIPS — FILTER ────────────────────────────── */
+  const pills  = document.querySelectorAll<HTMLButtonElement>('.gal-pill');
+  const strip  = document.getElementById('galStrip');
+  let   active = '*';
 
   pills.forEach(pill => {
     pill.addEventListener('click', () => {
       const filter = pill.dataset.filter ?? '*';
-      if (filter === current) return;
-      current = filter;
+      if (filter === active) return;
+      active = filter;
 
       pills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
 
-      const state = Flip.getState(items);
+      const isAll = filter === '*';
 
-      items.forEach(item => {
-        const match = filter === '*' || item.dataset.cat === filter;
-        (item as HTMLElement).style.display = match ? '' : 'none';
-      });
+      /* Pausa los strips al filtrar (se reanudan al volver a "Todos") */
+      strip?.classList.toggle('is-filtered', !isAll);
 
-      Flip.from(state, {
-        duration: .5,
-        scale: true,
-        ease: 'power2.inOut',
-        stagger: .04,
-        absolute: true,
-        onEnter: (els: Element[]) =>
-          gsap.fromTo(els, { opacity: 0, scale: .88 }, { opacity: 1, scale: 1, duration: .5 }),
-        onLeave: (els: Element[]) =>
-          gsap.to(els, { opacity: 0, scale: .88, duration: .4 }),
+      /* Atenúa ítems que no coinciden en AMBOS sets (A y B del loop) */
+      document.querySelectorAll<HTMLElement>('.gal-si').forEach(si => {
+        const match = isAll || si.dataset.cat === filter;
+        si.classList.toggle('gal-si-hidden', !match);
       });
     });
   });
 
-  /* ── 5. GALERÍA — CARGA PROGRESIVA ─────────────────────── */
-  const galMore  = document.getElementById('galMore');
-  const galGrid  = document.getElementById('galGrid');
-  const allFotos = (window as any).__galFotos as Array<{ src: string; alt: string; slug: string; cat: string }> ?? [];
-  let   loaded   = 24;
-
-  galMore?.addEventListener('click', () => {
-    const next = allFotos.slice(loaded, loaded + 24);
-    if (!next.length) { galMore.style.display = 'none'; return; }
-
-    const state = Flip.getState(document.querySelectorAll('.gal-item'));
-
-    next.forEach(f => {
-      const div = document.createElement('div');
-      div.className = 'gal-item';
-      div.dataset.cat = f.slug;
-      div.innerHTML = `
-        <div class="gal-protect" aria-hidden="true"></div>
-        <img src="${f.src}" alt="${f.alt}" loading="lazy" draggable="false" />
-        <span class="gal-badge">${f.cat}</span>
-      `;
-      galGrid?.appendChild(div);
+  /* ── 5. FILM STRIPS — SPOTLIGHT POR CURSOR ──────────────── */
+  document.querySelectorAll<HTMLElement>('.gal-si').forEach(si => {
+    si.addEventListener('mousemove', (e: MouseEvent) => {
+      const r = si.getBoundingClientRect();
+      si.style.setProperty('--mx', `${((e.clientX - r.left) / r.width  * 100).toFixed(1)}%`);
+      si.style.setProperty('--my', `${((e.clientY - r.top)  / r.height * 100).toFixed(1)}%`);
     });
-
-    Flip.from(state, {
-      duration: .5, stagger: .04, ease: 'power2.out',
-      onEnter: (els: Element[]) =>
-        gsap.fromTo(els, { opacity: 0, y: 30 }, { opacity: 1, y: 0, stagger: .04, duration: .6 }),
-    });
-
-    loaded += 24;
-    if (loaded >= allFotos.length) galMore.style.display = 'none';
   });
 
   /* ── 6. SCROLL REVEALS ──────────────────────────────────── */
@@ -812,35 +832,7 @@ const hayFotos = todasFotos.length > 0;
     });
   });
 
-  // 6b — Galería: estado inicial invisible + stagger reveal por batch
-  // Usamos scale (no translateY) para no provocar layout shifts en el masonry de columns.
-  if (!prefersRM) {
-    gsap.set('.gal-item', { opacity: 0, scale: 0.94, transformOrigin: 'center bottom' });
-
-    ScrollTrigger.batch('.gal-item', {
-      start: 'top 93%',
-      once: true,
-      onEnter: (batch: Element[]) =>
-        gsap.to(batch, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.65,
-          ease: 'power3.out',
-          stagger: { each: 0.055, from: 'start' },
-        }),
-    });
-  }
-
-
-  /* ── 7. GALERÍA — SPOTLIGHT DE CURSOR ──────────────────── */
-  // Radial gradient naranja sutil que sigue el cursor → efecto Premium editorial
-  document.querySelectorAll<HTMLElement>('.gal-item').forEach(item => {
-    item.addEventListener('mousemove', (e: MouseEvent) => {
-      const r = item.getBoundingClientRect();
-      item.style.setProperty('--mx', `${((e.clientX - r.left) / r.width  * 100).toFixed(1)}%`);
-      item.style.setProperty('--my', `${((e.clientY - r.top)  / r.height * 100).toFixed(1)}%`);
-    });
-  });
+  // 6b — (Film strips usan CSS animations — sin GSAP reveal necesario)
 
   /* ── 9. PROTECCIÓN DE IMÁGENES ──────────────────────────── */
   ['#galeria','#serv-bento'].forEach(sel => {
@@ -854,7 +846,3 @@ const hayFotos = todasFotos.length > 0;
   });
 </script>
 
-<!-- Datos de galería disponibles para el script de carga progresiva -->
-<script is:inline define:vars={{ todasFotos }}>
-  window.__galFotos = todasFotos;
-</script>

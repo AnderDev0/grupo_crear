@@ -1,5 +1,4 @@
 ---
-import LogoDisplace from '../components/LogoDisplace.astro';
 import Header from '../components/Header.astro';
 import '../styles/global.css';
 
@@ -12,35 +11,6 @@ const {
   title       = 'Grupo Crear — Agencia de Publicidad',
   description = 'Agencia de publicidad y soluciones gráficas. Impresión gran formato, material POP, branding y diseño web en Colombia.',
 } = Astro.props;
-
-/*
- * Content-Security-Policy
- * ────────────────────────────────────────────────────────────────
- * • script-src: 'self' cubre los bundles generados por Vite.
- *   Si se añaden servicios de terceros (Analytics, Hotjar, etc.),
- *   agregar su origen aquí.
- * • style-src 'unsafe-inline': necesario para las reglas CSS
- *   que Tailwind/Vite inyectan en <style> durante el build.
- * • media-src 'self': cubre los .webm del directorio /public.
- * • frame-ancestors 'none': evita clickjacking.
- * ────────────────────────────────────────────────────────────────
- * PRODUCCIÓN: Complementar con cabeceras HTTP en el servidor/CDN
- * (Vercel, Netlify, Nginx) para que frame-ancestors funcione
- * correctamente (las directivas de frame-ancestors en <meta> son
- * ignoradas por la especificación CSP).
- */
-const csp = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob:",
-  "media-src 'self' blob:",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join('; ');
 ---
 
 <!doctype html>
@@ -56,8 +26,7 @@ const csp = [
   <meta property="og:locale" content="es_CO" />
   <meta name="geo.region" content="CO" />
   <meta name="geo.placename" content="Bogotá, Colombia" />
-  <!-- Seguridad vía meta (reforzar con HTTP headers en producción) -->
-  <!--meta http-equiv="Content-Security-Policy" content={csp} /-->
+  <!-- CSP: implementar via HTTP headers en producción (Vercel/Netlify/Nginx) -->
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
 
@@ -202,8 +171,34 @@ const csp = [
     /* section frame */
     section{padding:clamp(80px,11vw,150px) clamp(20px,5vw,64px)}
     .wrap{max-width:1240px;margin:0 auto}
-    .idx{font-family:'Sofia Sans Condensed';font-size:14px;letter-spacing:.2em;color:var(--n);text-transform:uppercase;display:flex;align-items:center;gap:14px;margin-bottom:26px}
-    .idx::before{content:"";width:34px;height:1px;background:var(--n)}
+    /* ── IDX — Section label tag premium ── */
+    .idx{
+      font-family:'Sofia Sans Condensed',sans-serif;
+      font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+      color:var(--n);
+      display:inline-flex;align-items:center;gap:10px;
+      margin-bottom:clamp(16px,2.5vw,28px);
+      width:fit-content;
+      position:relative;
+    }
+    /* Punto pulsante — indicador de "activo / en vivo" */
+    .idx::before{
+      content:'';
+      width:5px;height:5px;border-radius:50%;
+      background:var(--n);
+      flex-shrink:0;
+      animation:idx-pulse 2.8s ease-in-out infinite;
+    }
+    /* Línea corta de cierre */
+    .idx::after{
+      content:'';
+      width:22px;height:1px;
+      background:linear-gradient(90deg,rgba(232,78,27,.55),transparent);
+    }
+    @keyframes idx-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(232,78,27,.5)}
+      55%    {box-shadow:0 0 0 5px rgba(232,78,27,0)}
+    }
     .lead{font-family:'Sofia Sans Condensed';font-weight:900;font-size:clamp(38px,6.5vw,86px);line-height:.92;letter-spacing:-.035em;text-transform:uppercase}
     .lead em{font-style:normal;color:var(--n)}
 
