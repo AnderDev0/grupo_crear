@@ -87,6 +87,44 @@ import Footer from '../components/Footer.astro';
     <!-- Logo hero mask — overlay oscuro con silueta del logo como ventana (z-20) -->
     <LogoHeroMask />
 
+    <!--
+      Tagline visual — bottom-left, estilo Podium. Opción C.
+      <p> sin aria-hidden: Google lo indexa como texto descriptivo de servicio.
+      No compite con el <h1> del segundo fold ("Hacemos que tu marca haga ruido").
+      z-index:35 → encima del LogoHeroMask (z-20) y del scroll-indicator (z-30).
+      Estado inicial: opacity:0 + translateY(16px).
+      GSAP controla BOTH entrada (fade-up tras intro) y salida (fade-up al scroll).
+    -->
+    <!--
+      aria-label: cuando JS reemplaza innerHTML con <span> por letra,
+      los lectores de pantalla leen este atributo en lugar de los spans.
+    -->
+    <p
+      id="hero-visual-tagline"
+      aria-label="Agencia de publicidad y producción gráfica para marcas de Colombia que quieren sobresalir."
+      style="
+        position:absolute;
+        bottom:clamp(3rem,7vh,5.5rem);
+        left:clamp(20px,5vw,64px);
+        z-index:35;
+        font-family:'Sofia Sans Condensed',sans-serif;
+        font-size:clamp(16px,1.6vw,22px);
+        font-weight:900;
+        letter-spacing:0.02em;
+        text-transform:uppercase;
+        color:rgba(255,255,255,0.82);
+        line-height:1.3;
+        margin:0;
+        max-width:520px;
+        opacity:1;
+        pointer-events:none;
+      "
+    >
+      Agencia de publicidad y producción<br aria-hidden="true">
+      gráfica para marcas de Colombia<br aria-hidden="true">
+      que quieren sobresalir.
+    </p>
+
     <div class="absolute bottom-10 left-[50%] -translate-x-1/2 text-center text-white/40 text-xs uppercase tracking-widest pointer-events-none opacity-0 z-[30]" id="scroll-indicator">
       <span>Scroll</span>
       <span class="block mt-2 animate-bounce">↓</span>
@@ -501,6 +539,65 @@ import Footer from '../components/Footer.astro';
     // ── Indicador de scroll ─────────────────────────────────────────────────
     gsap.set('#scroll-indicator', { opacity: 1 });
 
+    // ── Tagline visual — split por carácter + stagger aleatorio ─────────────
+    //
+    // splitTaglineChars():
+    //   Lee el HTML del <p> (respetando <br>), reemplaza su contenido con un
+    //   <span class="tchar" aria-hidden> por cada letra no-espaciada.
+    //   Los espacios quedan como TextNodes simples (no afectan el kerning).
+    //   Los <br> se recrean con aria-hidden para no interferir con el aria-label del <p>.
+    //   Devuelve el array de spans animables (.tchar).
+    //
+    // Entrada: letras aparecen en orden aleatorio con leve rise (y:6 → y:0).
+    // prefers-reduced-motion: salta la animación, muestra directo.
+    function splitTaglineChars(el: HTMLElement): HTMLElement[] {
+      const lines = el.innerHTML.split(/<br\b[^>]*>/i);
+      el.innerHTML = '';
+      const chars: HTMLElement[] = [];
+      lines.forEach((line, li) => {
+        const text = line.replace(/<[^>]*>/g, ''); // limpia tags residuales
+        [...text].forEach(char => {
+          if (char === ' ') {
+            el.appendChild(document.createTextNode(' '));
+          } else {
+            const s = document.createElement('span');
+            s.className    = 'tchar';
+            s.textContent  = char;
+            s.style.cssText = 'display:inline-block;opacity:0;';
+            s.setAttribute('aria-hidden', 'true');
+            el.appendChild(s);
+            chars.push(s);
+          }
+        });
+        if (li < lines.length - 1) {
+          const br = document.createElement('br');
+          br.setAttribute('aria-hidden', 'true');
+          el.appendChild(br);
+        }
+      });
+      return chars;
+    }
+
+    const taglineEl    = document.getElementById('hero-visual-tagline') as HTMLElement | null;
+    const taglineChars = taglineEl ? splitTaglineChars(taglineEl) : [];
+    const prefersRM    = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersRM || !taglineChars.length) {
+      taglineChars.forEach(c => (c.style.opacity = '1'));
+    } else {
+      gsap.fromTo(taglineChars,
+        { opacity: 0, y: 6 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.55,
+          ease: 'power3.out',
+          stagger: { each: 0.025, from: 'random' },
+          delay: 0.3,
+        }
+      );
+    }
+
     // ── Hero-content: texto del segundo fold con expo easing ────────────────
     // Usa la misma curva que Podium's @keyframes reveal / --ease-out-expo.
     gsap.timeline({
@@ -636,6 +733,41 @@ import Footer from '../components/Footer.astro';
       }
       // Scroll indicator desaparece al inicio
       tl.to('#scroll-indicator', { opacity: 0, ease: 'none', duration: 0.15 }, 0);
+
+      /*
+        fromTo (no to) — CRÍTICO para el scroll-back:
+        Con tl.to, GSAP captura el estado actual como "from" cuando el timeline
+        se crea. Si la animación de entrada aún no completó (delay:0.2), el "from"
+        capturado es opacity:0, y al hacer scroll-back el tagline queda invisible.
+        Con fromTo declaramos explícitamente que en progress:0 → opacity:1.
+        El ease 'power2.in' da una salida que acelera gradualmente (más suave que 'none').
+      */
+      /*
+        Tagline chars → integrados en el tl principal (mismo scrub que la máscara).
+
+        Por qué tl en vez de ScrollTrigger propio:
+        - Con ScrollTrigger separado, las letras desaparecían ANTES que el logo
+          empezara a moverse, desconectadas visualmente del zoom de la máscara.
+        - Al meterlas en el tl (position 0), letras y logo-zoom son el MISMO scroll.
+          El usuario siente que al mover la rueda el logo "absorbe" el texto.
+
+        fromTo con opacity:1 explícito → scroll-back devuelve todas las letras. ✅
+        stagger from:'random' → intercalado natural dentro del scrub del tl.      ✅
+        each:0.005 × ~60 chars + duration:0.22 ≈ 0.52 tl-time (26% del scroll).  ✅
+      */
+      const tChars = document.querySelectorAll<HTMLElement>('#hero-visual-tagline .tchar');
+      if (tChars.length && !prefersRM) {
+        tl.fromTo(tChars,
+          { opacity: 1 },
+          {
+            opacity: 0,
+            ease: 'none',
+            stagger: { each: 0.005, from: 'random' },
+            duration: 0.22,
+          },
+          0,
+        );
+      }
 
       // ── Header reactivo (Fase A) ──────────────────────────────────────────
       // El overlay blanco/naranja entra en Fase A.

@@ -1,0 +1,748 @@
+---
+/**
+ * EntregablesSection.astro
+ * Interactive Split-Screen "Qué Incluye" para páginas de servicio.
+ *
+ * Diseño: columna izquierda sticky (título masivo + indicador de progreso)
+ * + columna derecha scrollable (lista de entregables con magnetic preview,
+ * SVG stroke-draw, 3D tilt, ambient glow y number-shift on hover).
+ *
+ * Stack: Astro · GSAP (ScrollTrigger, ticker) · CSS custom properties
+ * Sin dependencias externas adicionales — todo usa el GSAP ya instalado.
+ */
+
+import type { Entregable } from '../data/servicios';
+
+interface Props {
+  entregables: Entregable[];
+}
+
+const { entregables } = Astro.props;
+---
+
+<!-- ════════════════════════════════════════════════════
+     SECTION SHELL
+════════════════════════════════════════════════════ -->
+<section id="entregables" aria-labelledby="ent-heading">
+
+  <div class="ent-wrap">
+
+    <!-- ░░░ LEFT — STICKY PANEL ░░░ -->
+    <aside class="ent-left">
+      <div class="ent-sticky">
+
+        <p class="ent-kicker">
+          <span class="ent-kicker-line" aria-hidden="true"></span>
+          Entregables
+        </p>
+
+        <!-- Massive heading with mask-reveal -->
+        <h2 id="ent-heading" class="ent-heading" aria-label="Qué incluye">
+          <span class="ent-mask"><span class="ent-word">QUÉ</span></span>
+          <span class="ent-mask"><span class="ent-word ent-word-accent">INCLUYE.</span></span>
+        </h2>
+
+        <!-- Live readout: current item -->
+        <div class="ent-readout" id="entReadout" aria-live="polite" aria-atomic="true">
+          <div class="ent-readout-row">
+            <span class="ent-readout-cur" id="entCur">01</span>
+            <span class="ent-readout-div" aria-hidden="true">/</span>
+            <span class="ent-readout-tot">{String(entregables.length).padStart(2,'0')}</span>
+          </div>
+          <p class="ent-readout-name" id="entName">{entregables[0]?.nombre ?? ''}</p>
+        </div>
+
+        <!-- Vertical progress track -->
+        <div class="ent-track" aria-hidden="true" role="presentation">
+          <div class="ent-track-rail"></div>
+          <div class="ent-track-fill" id="entFill"></div>
+          {entregables.map((_, i) => (
+            <div
+              class="ent-tick"
+              data-ti={i}
+              style={`top:calc(${(i / (entregables.length - 1)) * 100}% - 3px)`}
+            ></div>
+          ))}
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ░░░ RIGHT — SCROLLABLE LIST ░░░ -->
+    <div class="ent-right" id="entRight" role="list" aria-label="Lista de entregables">
+
+      {entregables.map((e, i) => (
+        <div
+          class="ent-item"
+          role="listitem"
+          data-i={String(i)}
+          data-nombre={e.nombre}
+          data-svg={e.svg}
+        >
+          <!-- Top separator — draws orange on hover -->
+          <div class="ent-sep" aria-hidden="true">
+            <div class="ent-sep-fill"></div>
+          </div>
+
+          <div class="ent-item-row">
+
+            <!-- ① Número con shift vertical en hover -->
+            <div class="ent-num" aria-hidden="true">
+              <span class="ent-num-off">{String(i + 1).padStart(2,'0')}</span>
+              <span class="ent-num-on" >{String(i + 1).padStart(2,'0')}</span>
+            </div>
+
+            <!-- ② Ícono SVG — stroke-draw al entrar en viewport -->
+            <div class="ent-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path class="ent-ipath" d={e.svg} />
+              </svg>
+            </div>
+
+            <!-- ③ Texto -->
+            <div class="ent-text">
+              <h3 class="ent-title">{e.nombre}</h3>
+              <p class="ent-detail">{e.desc}</p>
+            </div>
+
+            <!-- ④ Flecha — aparece en hover -->
+            <div class="ent-arrow" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path d="M3 13L13 3M13 3H5M13 3v8" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+          </div>
+
+          <!-- Ambient glow (x sigue el cursor) -->
+          <div class="ent-glow" aria-hidden="true"></div>
+        </div>
+      ))}
+
+      <!-- Último separador -->
+      <div class="ent-sep" aria-hidden="true" style="pointer-events:none">
+        <div class="ent-sep-fill"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ░░░ MAGNETIC FLOATING PREVIEW ░░░ -->
+  <div class="ent-preview" id="entPreview" aria-hidden="true">
+    <div class="ent-preview-inner" id="entPreviewInner">
+
+      <!-- Ghost número de fondo -->
+      <span class="ent-preview-ghost" id="entPreviewGhost" aria-hidden="true">01</span>
+
+      <!-- Ícono grande -->
+      <div class="ent-preview-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path class="ent-ppath" id="entPpath" d={entregables[0]?.svg ?? ''} />
+        </svg>
+      </div>
+
+      <!-- Nombre del entregable -->
+      <p class="ent-preview-name" id="entPreviewName">{entregables[0]?.nombre ?? ''}</p>
+
+      <!-- Grano analógico (inline SVG filter, cero peso) -->
+      <div class="ent-preview-grain" aria-hidden="true"></div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════════════ -->
+<style>
+/* ── Sección shell ── */
+#entregables {
+  background: var(--bg);
+  position: relative;
+  overflow: visible; /* permite al preview fixed salir del stacking context */
+  /* Anula el global `section { padding: clamp(80px…) }` de Layout.astro.
+     El padding se maneja internamente en .ent-left y .ent-right. */
+  padding: 0;
+}
+
+/* ── Split layout ── */
+.ent-wrap {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) 3fr;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 64px);
+}
+
+/* ─────────────────────────────
+   LEFT COLUMN — sticky panel
+───────────────────────────── */
+.ent-left {
+  padding-top:    clamp(80px, 11vw, 150px);
+  padding-bottom: clamp(80px, 11vw, 150px);
+}
+
+.ent-sticky {
+  position: sticky;
+  top: calc(64px + 32px); /* nav comprimido (64px) + espacio */
+  height: max-content;
+  padding-right: clamp(20px, 3.5vw, 48px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(22px, 3vw, 34px);
+}
+
+/* Kicker */
+.ent-kicker {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--n);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ent-kicker-line {
+  width: 32px; height: 1px;
+  background: var(--n);
+  flex-shrink: 0;
+}
+
+/* Heading masivo con mask-reveal */
+.ent-heading {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-weight: 900;
+  font-size: clamp(48px, 6.2vw, 86px);
+  line-height: .88;
+  letter-spacing: -.04em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+}
+.ent-mask {
+  display: block;
+  overflow: hidden;
+  line-height: .93;
+  padding-bottom: .07em;
+}
+.ent-word {
+  display: block;
+  /* GSAP establece y:'108%' → '0%' al scroll */
+}
+.ent-word-accent { color: var(--n); }
+
+/* Readout — indicador activo */
+.ent-readout { display: flex; flex-direction: column; gap: 5px; }
+.ent-readout-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.ent-readout-cur {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 28px; font-weight: 900;
+  color: var(--n); line-height: 1; letter-spacing: -.02em;
+}
+.ent-readout-div,
+.ent-readout-tot {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 13px;
+  color: var(--w40);
+}
+.ent-readout-name {
+  font-size: 11.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--w60);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  line-height: 1.3;
+}
+
+/* Track de progreso vertical */
+.ent-track {
+  position: relative;
+  width: 2px;
+  height: clamp(80px, 16vh, 140px);
+}
+.ent-track-rail,
+.ent-track-fill {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  border-radius: 2px;
+}
+.ent-track-rail { height: 100%; background: var(--w06); }
+.ent-track-fill {
+  height: 0%;
+  background: linear-gradient(var(--n), rgba(232,78,27,.12));
+  transition: height .08s linear;
+}
+.ent-tick {
+  position: absolute;
+  left: 50%;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.15);
+  background: var(--bg);
+  transform: translateX(-50%);
+  transition: background .25s, border-color .25s;
+}
+.ent-tick.is-active {
+  background: var(--n);
+  border-color: var(--n);
+}
+
+/* ─────────────────────────────
+   RIGHT COLUMN — lista
+───────────────────────────── */
+.ent-right {
+  border-left: 1px solid var(--w06);
+  padding-left: clamp(28px, 4vw, 56px);
+  padding-top:    clamp(80px, 11vw, 150px);
+  padding-bottom: clamp(80px, 11vw, 150px);
+}
+
+/* Separador — línea que dibuja naranja en hover */
+.ent-sep {
+  height: 1px;
+  background: var(--w12);
+  position: relative;
+  overflow: hidden;
+}
+.ent-sep-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--n);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .5s var(--ease);
+}
+.ent-item:hover > .ent-sep .ent-sep-fill { transform: scaleX(1); }
+
+/* Fila de item */
+.ent-item { position: relative; }
+
+.ent-item-row {
+  display: grid;
+  grid-template-columns: 44px 44px 1fr 36px;
+  align-items: center;
+  gap: clamp(14px, 2.2vw, 28px);
+  padding: clamp(20px, 3vw, 36px) 0;
+  transition: padding-left .4s var(--ease);
+}
+.ent-item:hover .ent-item-row { padding-left: 14px; }
+
+/* ① Número — two-layer shift */
+.ent-num {
+  position: relative;
+  height: 18px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ent-num-off,
+.ent-num-on {
+  position: absolute;
+  inset: 0;
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: .16em;
+  line-height: 1;
+  transition: transform .35s var(--ease), opacity .35s;
+}
+.ent-num-off { color: var(--w40); transform: translateY(0); }
+.ent-num-on  { color: var(--n);   transform: translateY(100%); opacity: 0; }
+.ent-item:hover .ent-num-off { transform: translateY(-100%); opacity: 0; }
+.ent-item:hover .ent-num-on  { transform: translateY(0);     opacity: 1; }
+
+/* ② Ícono box */
+.ent-icon {
+  width: 44px; height: 44px;
+  border: 1px solid rgba(232,78,27,.18);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: border-color .4s, background .4s, transform .5s var(--ease);
+}
+.ent-item:hover .ent-icon {
+  border-color: var(--n);
+  background: rgba(232,78,27,.07);
+  transform: rotate(7deg) scale(1.12);
+}
+.ent-icon svg { width: 22px; height: 22px; overflow: visible; }
+
+/* SVG path — stroke-draw via GSAP (strokeDasharray/Offset) */
+.ent-ipath {
+  stroke: var(--n);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ③ Texto */
+.ent-title {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: clamp(20px, 2.3vw, 30px);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -.02em;
+  line-height: 1;
+  color: #fff;
+  transition: color .35s;
+}
+.ent-item:hover .ent-title { color: var(--n); }
+
+.ent-detail {
+  font-size: 13px;
+  color: var(--w60);
+  line-height: 1.65;
+  margin-top: 7px;
+}
+
+/* ④ Flecha */
+.ent-arrow {
+  width: 34px; height: 34px;
+  border: 1px solid var(--w12);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: translate(-8px, 8px);
+  transition: opacity .4s var(--ease), transform .4s var(--ease),
+              border-color .4s, background .4s;
+  flex-shrink: 0;
+}
+.ent-arrow svg { width: 12px; height: 12px; stroke: #fff; }
+.ent-item:hover .ent-arrow {
+  opacity: 1;
+  transform: none;
+  border-color: var(--n);
+  background: var(--n);
+}
+
+/* Ambient glow radial */
+.ent-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    260px 55px at var(--gx, -300px) 50%,
+    rgba(232,78,27,.07),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity .3s;
+}
+.ent-item:hover .ent-glow { opacity: 1; }
+
+/* ─────────────────────────────
+   FLOATING PREVIEW (fixed)
+───────────────────────────── */
+.ent-preview {
+  position: fixed;
+  top: 0; left: 0;
+  width: 190px; height: 232px;
+  pointer-events: none;
+  z-index: 250; /* debajo del nav (300) y cursor (10000) */
+  will-change: transform;
+  /* xPercent / yPercent / scale manejados por GSAP */
+}
+
+.ent-preview-inner {
+  width: 100%; height: 100%;
+  border-radius: 14px;
+  background: var(--bg2);
+  border: 1px solid rgba(232,78,27,.2);
+  box-shadow:
+    0 30px 80px rgba(0,0,0,.65),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Número fantasma de fondo */
+.ent-preview-ghost {
+  position: absolute;
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 104px; font-weight: 900;
+  color: rgba(232,78,27,.06);
+  line-height: 1; letter-spacing: -.05em;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Ícono grande dentro del preview */
+.ent-preview-icon {
+  position: relative; z-index: 1;
+  width: 68px; height: 68px;
+  border: 1px solid rgba(232,78,27,.25);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(232,78,27,.04);
+  flex-shrink: 0;
+}
+.ent-preview-icon svg {
+  width: 34px; height: 34px;
+  overflow: visible;
+}
+.ent-ppath {
+  stroke: var(--n);
+  stroke-width: 1.4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Nombre del entregable en el preview */
+.ent-preview-name {
+  position: relative; z-index: 1;
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--w60);
+  text-align: center;
+  line-height: 1.35;
+  max-width: 140px;
+}
+
+/* Grano analógico via inline SVG filter — cero dependencias */
+.ent-preview-grain {
+  position: absolute; inset: 0; z-index: 2;
+  opacity: .035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .ent-wrap { grid-template-columns: 1fr; }
+  .ent-left { padding-bottom: 0; }
+  .ent-sticky { position: static; padding-right: 0; }
+  .ent-track  { display: none; }
+  .ent-right  { border-left: none; padding-left: 0; padding-top: 32px; }
+  .ent-preview { display: none; }
+}
+@media (max-width: 560px) {
+  .ent-item-row { grid-template-columns: 36px 1fr 28px; gap: 12px; }
+  .ent-icon { display: none; }
+}
+</style>
+
+<!-- ════════════════════════════════════════════════════
+     GSAP SCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+  import { gsap, ScrollTrigger } from '../utils/gsap-config';
+
+  const prefersRM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ─────────────────────────────────────────
+     1. TITLE MASK REVEAL
+     Palabras entran desde abajo del clip-path
+  ───────────────────────────────────────── */
+  gsap.set('.ent-word',    { y: '108%' });
+  gsap.set(['.ent-kicker', '.ent-readout', '.ent-track'], {
+    opacity: 0, y: 16,
+  });
+
+  ScrollTrigger.create({
+    trigger: '#entregables',
+    start: 'top 78%',
+    once: true,
+    onEnter() {
+      if (!prefersRM) {
+        gsap.to('.ent-word', {
+          y: '0%',
+          duration: 1.05,
+          ease: 'power4.out',
+          stagger: 0.1,
+        });
+        gsap.to(['.ent-kicker', '.ent-readout', '.ent-track'], {
+          opacity: 1, y: 0,
+          duration: 0.8, delay: 0.28,
+          ease: 'power3.out',
+          stagger: 0.08,
+        });
+      } else {
+        gsap.set('.ent-word', { y: '0%' });
+        gsap.set(['.ent-kicker', '.ent-readout', '.ent-track'], { opacity: 1, y: 0 });
+      }
+    },
+  });
+
+  /* ─────────────────────────────────────────
+     2. SVG STROKE DRAW al entrar en viewport
+     stroke-dashoffset: longitud → 0
+  ───────────────────────────────────────── */
+  document.querySelectorAll<SVGPathElement>('.ent-ipath').forEach(path => {
+    const len = path.getTotalLength();
+    gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
+  });
+
+  if (!prefersRM) {
+    ScrollTrigger.batch('.ent-item', {
+      start: 'top 90%',
+      once: true,
+      onEnter: (batch: Element[]) => {
+        batch.forEach((item, bi) => {
+          const path = item.querySelector<SVGPathElement>('.ent-ipath');
+          if (!path) return;
+          gsap.to(path, {
+            strokeDashoffset: 0,
+            duration: 0.88,
+            delay: bi * 0.12,
+            ease: 'power2.inOut',
+          });
+        });
+      },
+    });
+  }
+
+  /* ─────────────────────────────────────────
+     3. PROGRESO VERTICAL + READOUT ACTIVO
+     scrub 0.35 → suave y sin saltos
+  ───────────────────────────────────────── */
+  const trackFill  = document.getElementById('entFill');
+  const curEl      = document.getElementById('entCur');
+  const nameEl     = document.getElementById('entName');
+  const ticks      = document.querySelectorAll<HTMLElement>('.ent-tick');
+  const items      = document.querySelectorAll<HTMLElement>('.ent-item');
+
+  ScrollTrigger.create({
+    trigger: '#entRight',
+    start: 'top center',
+    end:   'bottom center',
+    scrub: 0.35,
+    onUpdate(self) {
+      const p   = self.progress;
+      const idx = Math.min(Math.floor(p * items.length), items.length - 1);
+      if (trackFill)  trackFill.style.height   = `${p * 100}%`;
+      if (curEl)      curEl.textContent         = String(idx + 1).padStart(2,'0');
+      if (nameEl)     nameEl.textContent        = items[idx]?.dataset.nombre ?? '';
+      ticks.forEach((t, i) => t.classList.toggle('is-active', i <= idx));
+    },
+  });
+
+  /* ─────────────────────────────────────────
+     4. MAGNETIC CURSOR PREVIEW
+     – spring follow via GSAP ticker
+     – 3D tilt en previewInner
+     – stroke-draw al cambiar de entregable
+     Solo activo en dispositivos con mouse (pointer: fine)
+  ───────────────────────────────────────── */
+  const preview      = document.getElementById('entPreview');
+  const previewInner = document.getElementById('entPreviewInner');
+  const previewGhost = document.getElementById('entPreviewGhost');
+  const previewName  = document.getElementById('entPreviewName');
+  const pPath        = document.getElementById('entPpath') as SVGPathElement | null;
+
+  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+  if (preview && !prefersRM && hasFinePointer) {
+
+    /* Posición inicial centrada, oculta, ligeramente reducida */
+    gsap.set(preview, { xPercent: -50, yPercent: -50, scale: 0.78, opacity: 0 });
+    gsap.set(previewInner, { transformPerspective: 900 });
+
+    let mx = 0, my = 0, cx = 0, cy = 0;
+    let visible = false;
+
+    /* Ticker → spring suave (factor 0.10 ≈ 200ms lag) */
+    const ticker = gsap.ticker.add(() => {
+      cx += (mx - cx) * 0.10;
+      cy += (my - cy) * 0.10;
+      gsap.set(preview, { x: cx, y: cy });
+    });
+
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+      mx = e.clientX;
+      my = e.clientY;
+    });
+
+    items.forEach(item => {
+
+      item.addEventListener('mouseenter', () => {
+        const nombre = item.dataset.nombre ?? '';
+        const svg    = item.dataset.svg    ?? '';
+        const idx    = parseInt(item.dataset.i ?? '0', 10);
+
+        /* Actualizar contenido del preview */
+        if (previewGhost) previewGhost.textContent = String(idx + 1).padStart(2,'0');
+        if (previewName)  previewName.textContent  = nombre;
+
+        /* Redibujar path SVG en el preview */
+        if (pPath && svg) {
+          pPath.setAttribute('d', svg);
+          const len = pPath.getTotalLength() || 40;
+          gsap.fromTo(pPath,
+            { strokeDasharray: len, strokeDashoffset: len },
+            { strokeDashoffset: 0, duration: 0.72, ease: 'power2.out' }
+          );
+        }
+
+        /* Mostrar preview con spring pop */
+        if (!visible) {
+          gsap.to(preview, {
+            scale: 1, opacity: 1,
+            duration: 0.42, ease: 'back.out(1.3)',
+          });
+          visible = true;
+        }
+      });
+
+      item.addEventListener('mousemove', (e: MouseEvent) => {
+        const r  = item.getBoundingClientRect();
+
+        /* Ambient glow: posición x del cursor dentro de la fila */
+        item.style.setProperty('--gx', `${e.clientX - r.left}px`);
+
+        /* 3D tilt del preview según posición del cursor en pantalla */
+        const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
+        const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+        if (previewInner) {
+          gsap.to(previewInner, {
+            rotateX: -ny * 11,
+            rotateY:  nx * 11,
+            duration: 0.45,
+            ease: 'power2.out',
+          });
+        }
+      });
+
+      item.addEventListener('mouseleave', () => {
+        /* Ocultar preview */
+        gsap.to(preview, {
+          scale: 0.82, opacity: 0,
+          duration: 0.26, ease: 'power2.in',
+        });
+        /* Restablecer tilt */
+        if (previewInner) {
+          gsap.to(previewInner, {
+            rotateX: 0, rotateY: 0,
+            duration: 0.5, ease: 'power3.out',
+          });
+        }
+        visible = false;
+      });
+    });
+  }
+</script>
