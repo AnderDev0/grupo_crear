@@ -5,7 +5,7 @@ import ContactDialog from '../../components/ContactDialog.astro';
 import RocketCursor from '../../components/RocketCursor.astro';
 import EntregablesSection from '../../components/EntregablesSection.astro';
 import { servicios } from '../../data/servicios';
-import type { Servicio } from '../../data/servicios';
+import type { Servicio, Foto } from '../../data/servicios';
 
 export function getStaticPaths() {
   return servicios.map(s => ({
@@ -14,11 +14,35 @@ export function getStaticPaths() {
   }));
 }
 
-interface Props { servicio: Servicio; }
-const { servicio: s } = Astro.props;
+const { servicio: s } = Astro.props as { servicio: Servicio };
 
-const otros   = servicios.filter(x => x.slug !== s.slug);
+const otros    = servicios.filter(x => x.slug !== s.slug);
 const hayFotos = s.fotos.length > 0;
+
+// ── Film strips para galería de sub-página ────────────────────────────────
+// Misma lógica que index.astro: shuffle + split no superpuesto.
+// Cada foto aparece en UNA sola columna → imposible verla duplicada.
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const copy = [...arr];
+  let s2 = (seed * 1664525 + 1013904223) >>> 0;
+  const rnd = () => { s2 = (s2 * 1664525 + 1013904223) >>> 0; return s2 / 0x100000000; };
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+const SUB_COLS    = 4;
+const subSpeeds   = [230, 290, 195, 260] as const;
+const subDelays   = [0, -95, -45, -165]  as const;
+
+const subShuffled = seededShuffle(s.fotos as Foto[], 42);
+const subChunk    = Math.ceil(subShuffled.length / SUB_COLS);
+const subColFotos = Array.from({ length: SUB_COLS }, (_, ci) =>
+  subShuffled.slice(ci * subChunk, Math.min((ci + 1) * subChunk, subShuffled.length))
+);
 
 // Pasos del proceso (contenido placeholder — reemplazar cuando esté redactado)
 const pasos = [
@@ -138,16 +162,28 @@ const pasos = [
       <h2 class="lead r" data-d="1" id="gal-serv-title">Proyectos de <em>{s.nombreCorto}.</em></h2>
 
       {hayFotos ? (
-        <div class="gal-grid-sub" id="galServGrid">
-          {s.fotos.map(foto => (
-            <div class="gal-item-sub">
-              <div class="gal-protect" aria-hidden="true"></div>
-              <img
-                src={foto.src}
-                alt={foto.alt}
-                loading="lazy"
-                draggable="false"
-              />
+        <div class="gal-sub-strip" id="galSubStrip">
+          {subColFotos.map((colFotos, ci) => colFotos.length > 0 && (
+            <div
+              class={`gal-sub-col gal-sub-${ci % 2 === 0 ? 'up' : 'down'}`}
+              style={`--spd:${subSpeeds[ci]}s; --dly:${subDelays[ci]}s`}
+            >
+              <div class="gal-sub-track">
+                {/* Set A — ítems reales */}
+                {colFotos.map((foto: Foto) => (
+                  <div class="gal-item-sub">
+                    <div class="gal-protect" aria-hidden="true"></div>
+                    <img src={foto.src} alt={foto.alt} loading="lazy" draggable="false" />
+                  </div>
+                ))}
+                {/* Set B — duplicado para loop sin costura */}
+                {colFotos.map((foto: Foto) => (
+                  <div class="gal-item-sub" aria-hidden="true">
+                    <div class="gal-protect" aria-hidden="true"></div>
+                    <img src={foto.src} alt="" loading="lazy" draggable="false" />
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -358,37 +394,71 @@ const pasos = [
   .paso-num { margin-bottom: 0; }
 }
 
-/* ── GALERÍA SUB ── */
-.gal-grid-sub {
-  columns: 4;
-  column-gap: clamp(10px,1.2vw,14px);
-  margin-top: clamp(36px,5vw,56px);
+/* ── GALERÍA SUB — Film Strips ── */
+#galeria-serv { padding-left: 0; padding-right: 0; }
+
+.gal-sub-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(8px, 1vw, 12px);
+  height: 82vh;
+  min-height: 500px;
+  overflow: hidden;
+  margin-top: clamp(28px,4vw,48px);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%);
 }
+
+.gal-sub-col   { overflow: hidden; position: relative; }
+.gal-sub-track {
+  display: flex; flex-direction: column;
+  gap: clamp(8px, 1vw, 12px);
+  will-change: transform;
+}
+
+.gal-sub-up .gal-sub-track {
+  animation: strip-up var(--spd, 230s) linear infinite;
+  animation-delay: var(--dly, 0s);
+}
+.gal-sub-down .gal-sub-track {
+  animation: strip-down var(--spd, 260s) linear infinite;
+  animation-delay: var(--dly, 0s);
+}
+.gal-sub-col:hover .gal-sub-track { animation-play-state: paused; }
+
+@keyframes strip-up   { from { transform:translateY(0) } to { transform:translateY(-50%) } }
+@keyframes strip-down { from { transform:translateY(-50%) } to { transform:translateY(0) } }
+
 .gal-item-sub {
-  position: relative;
-  break-inside: avoid;
-  border-radius: 8px; overflow: hidden;
-  margin-bottom: clamp(10px,1.2vw,14px);
+  position: relative; border-radius: 8px; overflow: hidden; flex-shrink: 0;
 }
 .gal-item-sub img {
-  width: 100%; height: auto; display: block;
-  transition: transform .8s var(--ease);
+  width: 100%; display: block; object-fit: cover;
   pointer-events: none; -webkit-user-drag: none;
+  transition: transform .9s var(--ease);
 }
+/* Mismo patrón de alturas variadas que la galería overview */
+.gal-item-sub:nth-child(6n+1) img { height: clamp(180px,17vw,260px); }
+.gal-item-sub:nth-child(6n+2) img { height: clamp(140px,13vw,190px); }
+.gal-item-sub:nth-child(6n+3) img { height: clamp(240px,23vw,340px); }
+.gal-item-sub:nth-child(6n+4) img { height: clamp(150px,14vw,200px); }
+.gal-item-sub:nth-child(6n+5) img { height: clamp(200px,19vw,280px); }
+.gal-item-sub:nth-child(6n+6) img { height: clamp(110px,10vw,160px); }
 .gal-item-sub:hover img { transform: scale(1.04); }
+
 .gal-protect { position: absolute; inset: 0; z-index: 2; }
 
-/* Spotlight de cursor en galería de sub-página */
+/* Spotlight de cursor */
 .gal-item-sub::after {
-  content: '';
-  position: absolute; inset: 0; z-index: 3;
-  opacity: 0;
-  background: radial-gradient(180px at var(--mx,50%) var(--my,50%), rgba(232,78,27,.13), transparent 70%);
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  opacity: 0; border-radius: inherit;
+  background: radial-gradient(160px at var(--mx,50%) var(--my,50%),rgba(232,78,27,.12),transparent 70%);
   transition: opacity .3s;
-  pointer-events: none;
-  border-radius: inherit;
 }
 .gal-item-sub:hover::after { opacity: 1; }
+
+@media (max-width: 900px)  { .gal-sub-strip { grid-template-columns: repeat(3, 1fr); height: 70vh; } }
+@media (max-width: 580px)  { .gal-sub-strip { grid-template-columns: repeat(2, 1fr); height: 60vh; } }
 
 .gal-empty {
   margin-top: clamp(28px,4vw,48px);
@@ -491,29 +561,14 @@ const pasos = [
     });
   }
 
-  /* ── GALERÍA SUB — STAGGER REVEAL ── */
-  if (!prefersRM) {
-    gsap.set('.gal-item-sub', { opacity: 0, scale: 0.94, transformOrigin: 'center bottom' });
-    ScrollTrigger.batch('.gal-item-sub', {
-      start: 'top 93%',
-      once: true,
-      onEnter: (batch: Element[]) =>
-        gsap.to(batch, {
-          opacity: 1, scale: 1,
-          duration: 0.65, ease: 'power3.out',
-          stagger: { each: 0.05, from: 'start' },
-        }),
+  /* ── GALERÍA SUB — Strips usan CSS animation; solo spotlight de cursor ── */
+  document.querySelectorAll<HTMLElement>('.gal-item-sub').forEach(item => {
+    item.addEventListener('mousemove', (e: MouseEvent) => {
+      const r = item.getBoundingClientRect();
+      item.style.setProperty('--mx', `${((e.clientX - r.left) / r.width  * 100).toFixed(1)}%`);
+      item.style.setProperty('--my', `${((e.clientY - r.top)  / r.height * 100).toFixed(1)}%`);
     });
-
-    // Spotlight de cursor
-    document.querySelectorAll<HTMLElement>('.gal-item-sub').forEach(item => {
-      item.addEventListener('mousemove', (e: MouseEvent) => {
-        const r = item.getBoundingClientRect();
-        item.style.setProperty('--mx', `${((e.clientX - r.left) / r.width  * 100).toFixed(1)}%`);
-        item.style.setProperty('--my', `${((e.clientY - r.top)  / r.height * 100).toFixed(1)}%`);
-      });
-    });
-  }
+  });
 
   /* ── PROTECCIÓN DE IMÁGENES ── */
   ['#galeria-serv','#otros-serv','#sub-hero'].forEach(sel => {

@@ -11,12 +11,38 @@ const todasFotos = servicios.flatMap(s =>
 );
 const hayFotos = todasFotos.length > 0;
 
-// Film strips: 5 columnas en "Todos", 4 cuando hay filtro activo.
-// Velocidades lentas y asincrónicas → efecto carrete de film orgánico.
-const STRIP_COLS = 5;
-const stripColSpeeds = [52, 68, 44, 60, 50]; // segundos por loop (más lentos)
-const stripColFotos  = Array.from({ length: STRIP_COLS }, (_, ci) =>
-  todasFotos.filter((_, i) => i % STRIP_COLS === ci)
+// ── Film strips ────────────────────────────────────────────────────────────
+// 5 columnas en "Todos", 4 cuando hay filtro activo.
+// Cada columna tiene su propio shuffle deterministico para que el orden de
+// fotos sea completamente diferente entre columnas (no solo desplazado).
+// Los delays negativos hacen que cada tira arranque en un punto distinto
+// de su ciclo → nunca parecen sincronizadas entre sí.
+
+// Shuffle LCG deterministico — mismo resultado en cada build (SSG)
+type Foto = { src: string; alt: string; slug: string; cat: string };
+function seededShuffle(arr: Foto[], seed: number): Foto[] {
+  const copy = [...arr];
+  let s = (seed * 1664525 + 1013904223) >>> 0;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; };
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+const STRIP_COLS  = 5;
+const stripSpeeds = [240, 300, 200, 270, 220] as const;
+const stripDelays = [0, -110, -55, -185, -80] as const;
+
+// DISTRIBUCIÓN NO SUPERPUESTA:
+// 1. shuffle global de todas las fotos
+// 2. split en 5 chunks sin solapamiento → cada foto va a UNA SOLA columna
+// Así nunca puede aparecer la misma foto en dos columnas a la vez.
+const allShuffled  = seededShuffle(todasFotos, 42);
+const chunkSize    = Math.ceil(allShuffled.length / STRIP_COLS);
+const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
+  allShuffled.slice(ci * chunkSize, Math.min((ci + 1) * chunkSize, allShuffled.length))
 );
 ---
 
@@ -185,7 +211,7 @@ const stripColFotos  = Array.from({ length: STRIP_COLS }, (_, ci) =>
           {stripColFotos.map((colFotos, ci) => colFotos.length > 0 && (
             <div
               class={`gal-col gal-col-${ci % 2 === 0 ? 'up' : 'down'}`}
-              style={`--spd:${stripColSpeeds[ci]}s`}
+              style={`--spd:${stripSpeeds[ci]}s; --dly:${stripDelays[ci]}s`}
             >
               <div class="gal-track">
                 {/* Set A — ítems reales */}
@@ -587,14 +613,16 @@ const stripColFotos  = Array.from({ length: STRIP_COLS }, (_, ci) =>
   will-change: transform;
 }
 
-/* Columnas impares suben, pares bajan */
-.gal-col-up .gal-track   { animation: strip-up   var(--spd,28s) linear infinite; }
-.gal-col-down .gal-track {
-  animation: strip-down var(--spd,32s) linear infinite;
-  animation-delay: calc(var(--spd,32s) * -0.5); /* offset para quiebre visual */
+/* Columnas impares suben, pares bajan — delay por columna vía --dly */
+.gal-col-up .gal-track {
+  animation: strip-up var(--spd,240s) linear infinite;
+  animation-delay: var(--dly, 0s);
 }
-.gal-col:hover .gal-track          { animation-play-state: paused; }
-.gal-strip.is-filtered .gal-track  { animation-play-state: paused; }
+.gal-col-down .gal-track {
+  animation: strip-down var(--spd,270s) linear infinite;
+  animation-delay: var(--dly, 0s);
+}
+.gal-col:hover .gal-track { animation-play-state: paused; }
 
 @keyframes strip-up {
   from { transform: translateY(0); }
