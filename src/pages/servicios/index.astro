@@ -64,28 +64,28 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
     <div class="wrap sh-grid">
       <!-- Columna texto -->
       <div class="sh-txt">
-        <div class="idx r" id="sh-idx">00 — Servicios</div>
+        <div class="idx" id="sh-idx">00 — Servicios</div>
 
         <h1 class="lead sh-h1" id="sh-h1" aria-label="Seis disciplinas. Una sola dirección.">
           <span class="ln"><span>Seis disciplinas.</span></span>
           <span class="ln"><span>Una sola <em>dirección.</em></span></span>
         </h1>
 
-        <p class="sh-sub r" data-d="2" id="sh-sub">
+        <p class="sh-sub" id="sh-sub">
           Del concepto a la producción — diseño, impresión,<br aria-hidden="true">
           branding y digital bajo un mismo equipo creativo.
         </p>
 
         <!-- Pills de servicios (accesos rápidos) -->
-        <div class="sh-pills r" data-d="3" id="sh-pills">
+        <div class="sh-pills" id="sh-pills">
           {servicios.map(s => (
-            <button
+            <a
+              href={`/servicios/${s.slug}`}
               class="sh-pill"
-              data-target={`serv-${s.slug}`}
               aria-label={`Ir a ${s.nombre}`}
             >
               {s.nombreCorto}
-            </button>
+            </a>
           ))}
         </div>
       </div>
@@ -113,14 +113,13 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   ═══════════════════════════════════════ -->
   <div id="serv-nav" aria-label="Navegar entre servicios">
     <div class="sn-inner">
-      {servicios.map((s, i) => (
-        <button
-          class={`sn-pill${i === 0 ? ' active' : ''}`}
-          data-target={`serv-${s.slug}`}
-          data-slug={s.slug}
+      {servicios.map((s) => (
+        <a
+          href={`/servicios/${s.slug}`}
+          class="sn-pill"
         >
           {s.nombreCorto}
-        </button>
+        </a>
       ))}
     </div>
   </div>
@@ -145,16 +144,20 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
       <div class="bento-grid">
         {servicios.map((s, i) => (
           <a
+            id={`serv-${s.slug}`}
             href={`/servicios/${s.slug}`}
             class={`bc r bc-${String(i + 1).padStart(2, '0')}`}
             data-d={String((i % 3) + 1)}
-            style={s.fotoPrincipal
-              ? `--bc-bg:url(${s.fotoPrincipal})`
-              : `--bc-bg:${s.gradiente}`}
             aria-label={s.nombre}
           >
             {/* Fondo */}
-            <div class="bc-img" aria-hidden="true"></div>
+            <div
+              class="bc-img"
+              style={s.fotoPrincipal
+                ? `background-image:url(${s.fotoPrincipal})`
+                : `background:${s.gradiente}`}
+              aria-hidden="true"
+            ></div>
             <div class="bc-overlay" aria-hidden="true"></div>
 
             {/* Número fantasma */}
@@ -199,9 +202,11 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
         <!-- Filtros -->
         <div class="gal-filters r" data-d="3" role="group" aria-label="Filtrar por categoría">
           <button class="gal-pill active" data-filter="*">Todos</button>
-          {servicios.map(s => (
-            <button class="gal-pill" data-filter={s.slug}>{s.nombreCorto}</button>
-          ))}
+          {servicios.map(s => {
+            const tieneFotos = s.fotos && s.fotos.length > 0;
+            if (!tieneFotos) return null;
+            return <button class="gal-pill" data-filter={s.slug}>{s.nombreCorto}</button>;
+          })}
         </div>
       </div>
 
@@ -245,23 +250,28 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   <!-- ═══════════════════════════════════════
        CTA DOBLE
   ═══════════════════════════════════════ -->
-  <section id="cto-serv" aria-labelledby="cto-serv-title">
+  <section class="cto-serv-section" aria-labelledby="cto-title">
     <div class="cto-huge" aria-hidden="true">Crear</div>
     <div class="wrap">
-      <div class="cto-serv-grid r">
+      <div class="cto-container">
 
-        <div class="cto-col" data-d="1">
-          <div class="cto-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.4">
-              <path d="M3 21l1.6-4A8.5 8.5 0 1 1 8 19.4z"/>
-              <path d="M9 10c0 3 2 5 5 5"/>
-            </svg>
+        <!-- Columna 1: WhatsApp -->
+        <div class="cto-card r" data-d="1">
+          <div class="cto-card-glow" aria-hidden="true"></div>
+          <div class="cto-card-header">
+            <div class="cto-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 21l1.6-4A8.5 8.5 0 1 1 8 19.4z"/>
+                <path d="M9 10c0 3 2 5 5 5"/>
+              </svg>
+            </div>
+            <span class="cto-card-kicker">Respuesta inmediata</span>
           </div>
-          <h2 id="cto-serv-title" class="cto-col-h">Respuesta rápida</h2>
-          <p>Cuéntanos qué necesitas. Respondemos en menos de 24 horas con una propuesta concreta y sin compromiso.</p>
+          <h2 id="cto-title" class="cto-card-title">Respuesta rápida</h2>
+          <p class="cto-card-desc">Cuéntanos qué necesitas. Respondemos en menos de 24 horas con una propuesta concreta y sin compromiso.</p>
           <a
             href="https://wa.me/573000000000"
-            class="btn-fill"
+            class="btn-fill cto-card-btn"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -272,19 +282,25 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
           </a>
         </div>
 
-        <div class="cto-sep" aria-hidden="true"></div>
-
-        <div class="cto-col" data-d="2">
-          <div class="cto-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.4">
-              <rect x="3" y="5" width="18" height="14" rx="2"/>
-              <path d="M3 7l9 6 9-6"/>
-            </svg>
+        <!-- Columna 2: Cotización Formal -->
+        <div class="cto-card r" data-d="2">
+          <div class="cto-card-glow" aria-hidden="true"></div>
+          <div class="cto-card-header">
+            <div class="cto-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <path d="M3 7l9 6 9-6"/>
+              </svg>
+            </div>
+            <span class="cto-card-kicker">Propuesta formal</span>
           </div>
-          <h3 class="cto-col-h">Cotización formal</h3>
-          <p>Prefiere un presupuesto detallado por escrito. Llena el formulario y te respondemos.</p>
-          <button class="btn-line" id="openContactServ">
-            Pedir cotización →
+          <h3 class="cto-card-title">Cotización formal</h3>
+          <p class="cto-card-desc">Prefiere un presupuesto detallado por escrito. Llena el formulario y te respondemos con una cotización estructurada.</p>
+          <button class="btn-outline cto-card-btn" id="openContactServ">
+            Pedir cotización
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
           </button>
         </div>
 
@@ -376,6 +392,8 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 }
 
 .sh-pill {
+  display: inline-block;
+  text-decoration: none;
   font-family: 'Sofia Sans Condensed', sans-serif;
   font-size: 12px;
   letter-spacing: .15em;
@@ -426,21 +444,39 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   .hc-3 { width: 90px;  height: 90px; }
 }
 
-/* ── STICKY NAV ── */
+/* ── STICKY NAV (CÁPSULA FLOTANTE PREMIUM) ── */
 #serv-nav {
   position: sticky;
-  top: 0;
+  top: 92px; /* Mayor espacio (28px) por debajo del navbar colapsado de 64px para dar aire visual */
   z-index: 200;
-  background: rgba(0,20,67,.9);
-  backdrop-filter: blur(20px) saturate(160%);
-  border-bottom: 1px solid var(--w06);
-  padding: 12px clamp(20px,5vw,64px);
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  margin: 24px auto;
+  background: rgba(0, 16, 42, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  padding: 6px;
+  box-shadow: 
+    0 16px 36px rgba(0, 0, 0, 0.5), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* Oculto por defecto */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.95);
+  transition: 
+    opacity 0.4s var(--ease), 
+    visibility 0.4s var(--ease), 
+    transform 0.4s var(--ease);
+}
+#serv-nav.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
 .sn-inner {
-  max-width: 1240px;
-  margin: 0 auto;
   display: flex;
-  gap: 8px;
+  gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -450,20 +486,27 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 .sn-pill {
   flex-shrink: 0;
   font-family: 'Sofia Sans Condensed', sans-serif;
-  font-size: 12px;
-  letter-spacing: .15em;
+  font-size: 11px;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--w60);
-  border: 1px solid var(--w12);
+  border: 1px solid transparent;
   border-radius: 100px;
-  padding: 7px 18px;
+  padding: 7px 16px;
   background: transparent;
   cursor: none;
   transition: .3s var(--ease);
   white-space: nowrap;
 }
-.sn-pill:hover { color: #fff; border-color: rgba(232,78,27,.4); }
-.sn-pill.active { background: var(--n); color: #fff; border-color: var(--n); }
+.sn-pill:hover { 
+  color: #fff; 
+  background: var(--n); 
+  border-color: var(--n); 
+}
+.sn-pill.active { 
+  color: var(--n); 
+  font-weight: 700;
+}
 
 /* ── BENTO ── */
 #serv-bento { background: var(--ink); }
@@ -499,10 +542,12 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 .bc:hover .bc-title { color: var(--n); }
 .bc:hover .bc-arrow { opacity: 1; transform: none; border-color: var(--n); background: var(--n); }
 
-/* Fondo — imagen o gradiente via CSS custom property */
+/* Fondo — imagen o gradiente */
 .bc-img {
   position: absolute; inset: 0;
-  background: var(--bc-bg) center / cover no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   transition: transform .9s var(--ease);
 }
 .bc-overlay {
@@ -691,34 +736,150 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 @media (max-width: 580px)  { .gal-strip { grid-template-columns: repeat(2, 1fr) !important; height: 62vh; } }
 
 /* ── CTA DOBLE ── */
-#cto-serv {
+.cto-serv-section {
   background: var(--ink);
-  position: relative; overflow: hidden;
+  position: relative;
+  overflow: hidden;
 }
-.cto-serv-grid {
-  position: relative; z-index: 2;
+.cto-container {
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: clamp(30px,5vw,70px);
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px, 4vw, 48px);
+}
+.cto-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: clamp(30px, 5vw, 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: border-color 0.4s var(--ease), background 0.4s var(--ease), transform 0.4s var(--ease);
+  overflow: hidden;
+}
+.cto-card:hover {
+  border-color: rgba(232, 78, 27, 0.35);
+  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-4px);
+}
+.cto-card-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    300px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(232, 78, 27, 0.08),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+  z-index: 0;
+}
+.cto-card:hover .cto-card-glow {
+  opacity: 1;
+}
+.cto-card-header {
+  display: flex;
   align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
 }
-.cto-sep {
-  width: 1px; height: 140px;
-  background: linear-gradient(var(--n), rgba(232,78,27,.06));
+.cto-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(232, 78, 27, 0.08);
+  border: 1px solid rgba(232, 78, 27, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--n);
+  transition: transform 0.4s var(--ease), background 0.4s var(--ease);
 }
-.cto-col .cto-ic { margin-bottom: 18px; }
-.cto-col .cto-ic svg { width: 32px; height: 32px; stroke: var(--n); fill: none; }
-.cto-col-h {
+.cto-card:hover .cto-card-icon {
+  transform: scale(1.1) rotate(5deg);
+  background: rgba(232, 78, 27, 0.15);
+}
+.cto-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.cto-card-kicker {
   font-family: 'Sofia Sans Condensed', sans-serif;
-  font-size: clamp(24px,2.8vw,38px);
-  font-weight: 800; text-transform: uppercase;
-  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--w40);
 }
-.cto-col > p { color: var(--w60); font-size: 16px; line-height: 1.6; margin-bottom: 28px; max-width: 300px; }
-
-@media (max-width: 768px) {
-  .cto-serv-grid { grid-template-columns: 1fr; gap: 40px; }
-  .cto-sep { display: none; }
+.cto-card-title {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: clamp(24px, 3vw, 42px);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0 0 16px 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+.cto-card-desc {
+  font-size: clamp(14px, 1.2vw, 16px);
+  color: var(--w60);
+  line-height: 1.65;
+  margin: 0 0 36px 0;
+  max-width: 480px;
+  flex-grow: 1;
+  position: relative;
+  z-index: 1;
+}
+.cto-card-btn {
+  position: relative;
+  z-index: 1;
+}
+.btn-outline {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  color: #fff;
+  text-decoration: none;
+  padding: 17px 30px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'Sofia Sans', sans-serif;
+  cursor: none;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.btn-outline:hover {
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
+}
+.btn-outline svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s;
+}
+.btn-outline:hover svg {
+  transform: translateX(4px);
+  stroke: var(--ink);
+}
+@media (max-width: 860px) {
+  .cto-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
 }
 </style>
 
@@ -732,62 +893,44 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   const prefersRM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (!prefersRM) {
+    // Seteamos el estado inicial en JS de inmediato para evitar FOUC
+    gsap.set('#sh-idx',   { opacity: 0, y: 16 });
+    gsap.set('#sh-sub',   { opacity: 0, y: 20 });
+    gsap.set('#sh-pills', { opacity: 0, y: 16 });
+
     gsap.timeline({ defaults: { ease: 'power4.out' } })
       // Label índice
-      .from('#sh-idx',            { opacity: 0, y: 16, duration: .6 }, .15)
-      // Líneas del h1 — slide-up desde overflow hidden
-      .from('#sh-h1 .ln span',    { y: '105%', stagger: .12, duration: .9 }, .25)
+      .to('#sh-idx',            { opacity: 1, y: 0, duration: .6 }, .15)
+      // Líneas del h1 — slide-up desde overflow hidden (animación a 0%)
+      .to('#sh-h1 .ln span',      { y: '0%', stagger: .12, duration: .9 }, .25)
       // Subtítulo
       .to('#sh-sub',              { opacity: 1, y: 0, duration: .7 }, '-=.5')
       // Pills de acceso rápido
       .to('#sh-pills',            { opacity: 1, y: 0, duration: .6 }, '-=.4')
-      // Collage flotante — cada foto entra desde abajo con leve rotación adicional
-      .from('.hc-1', { opacity: 0, y: 50, rotation: -12, duration: .8 }, '-=.4')
-      .from('.hc-2', { opacity: 0, y: 60, rotation:   8, duration: .8 }, '-=.65')
-      .from('.hc-3', { opacity: 0, y: 40, rotation:  -6, duration: .7 }, '-=.6');
+      // Collage flotante — cada foto entra desde abajo con leve rotación adicional (fromTo para forzar visibilidad)
+      .fromTo('.hc-1', { opacity: 0, y: 50, rotation: -12 }, { opacity: 1, y: 0, rotation: -5, duration: .8 }, '-=.4')
+      .fromTo('.hc-2', { opacity: 0, y: 60, rotation:   8 }, { opacity: 1, y: 0, rotation: 4,  duration: .8 }, '-=.65')
+      .fromTo('.hc-3', { opacity: 0, y: 40, rotation:  -6 }, { opacity: 1, y: 0, rotation: -2, duration: .7 }, '-=.6');
   } else {
     // Sin animación — mostrar directo
-    gsap.set(['#sh-sub','#sh-pills','.hc'], { opacity: 1, y: 0 });
+    gsap.set('.hc', { opacity: 1, y: 0 });
     gsap.set('#sh-h1 .ln span', { y: 0 });
   }
 
-  /* ── 2. STICKY NAV — ACTIVE PILL POR SECCIÓN ───────────── */
-  const snPills = document.querySelectorAll<HTMLButtonElement>('.sn-pill');
-  const shPills = document.querySelectorAll<HTMLButtonElement>('.sh-pill');
-
-  // Delegación: click en pills del hero hace scroll a la sección
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    (window as any).__lenis?.scrollTo(el, { offset: -130, duration: 1.2 });
-  };
-
-  shPills.forEach(p => p.addEventListener('click', () => scrollTo(p.dataset.target ?? '')));
-  snPills.forEach(p => p.addEventListener('click', () => scrollTo(p.dataset.target ?? '')));
-
-  // IntersectionObserver: activa el pill correspondiente al hacer scroll
-  const setActive = (slug: string) => {
-    snPills.forEach(p => p.classList.toggle('active', p.dataset.slug === slug));
-  };
-
-  const io = new IntersectionObserver(
-    entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const slug = (e.target as HTMLElement).dataset.slug ?? '';
-          if (slug) setActive(slug);
-        }
-      });
-    },
-    { rootMargin: '-30% 0px -60% 0px', threshold: 0 }
-  );
-
-  // Cada sección de servicio en sub-páginas tiene id="serv-{slug}"
-  // En esta página el bento es la referencia. Observamos las bento cards.
-  document.querySelectorAll<HTMLElement>('.bc').forEach(card => {
-    const slug = card.getAttribute('href')?.replace('/servicios/', '') ?? '';
-    card.dataset.slug = slug;
-    io.observe(card);
+  /* ── 2. STICKY NAV — REDIRECCIÓN DIRECTA (SIN SCROLL HIGHLIGHT) ── */
+  ScrollTrigger.create({
+    trigger: '#hero',
+    start: 'bottom top+=92',
+    onEnter: () => document.getElementById('serv-nav')?.classList.add('visible'),
+    onLeaveBack: () => document.getElementById('serv-nav')?.classList.remove('visible'),
+    onRefresh: (self) => {
+      const nav = document.getElementById('serv-nav');
+      if (self.progress > 0) {
+        nav?.classList.add('visible');
+      } else {
+        nav?.classList.remove('visible');
+      }
+    }
   });
 
   /* ── 3. BENTO CARDS — 3D MOUSE TRACKING ────────────────── */
@@ -871,6 +1014,15 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   /* ── 10. CTA — abrir ContactDialog ──────────────────────── */
   document.getElementById('openContactServ')?.addEventListener('click', () => {
     document.querySelector<HTMLDialogElement>('#contact-dialog')?.showModal();
+  });
+
+  /* ── 11. CTA CARDS — SPOTLIGHT DE CURSOR ───────────────── */
+  document.querySelectorAll<HTMLElement>('.cto-card').forEach(card => {
+    card.addEventListener('mousemove', (e: MouseEvent) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
   });
 </script>
 

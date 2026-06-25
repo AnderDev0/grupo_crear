@@ -18,7 +18,6 @@ const { servicio: s } = Astro.props as { servicio: Servicio };
 
 const otros    = servicios.filter(x => x.slug !== s.slug);
 const hayFotos = s.fotos.length > 0;
-
 // ── Film strips para galería de sub-página ────────────────────────────────
 // Misma lógica que index.astro: shuffle + split no superpuesto.
 // Cada foto aparece en UNA sola columna → imposible verla duplicada.
@@ -44,13 +43,7 @@ const subColFotos = Array.from({ length: SUB_COLS }, (_, ci) =>
   subShuffled.slice(ci * subChunk, Math.min((ci + 1) * subChunk, subShuffled.length))
 );
 
-// Pasos del proceso (contenido placeholder — reemplazar cuando esté redactado)
-const pasos = [
-  { num: '01', titulo: 'Brief',       desc: 'Entendemos tu proyecto, objetivos y audiencia.' },
-  { num: '02', titulo: 'Propuesta',   desc: 'Concepto visual + presupuesto en menos de 72h.' },
-  { num: '03', titulo: 'Producción',  desc: 'Ejecución con revisiones incluidas sin costo.' },
-  { num: '04', titulo: 'Entrega',     desc: 'Archivo final + seguimiento post-entrega.' },
-];
+const pasos = s.pasos;
 ---
 
 <Layout
@@ -58,6 +51,23 @@ const pasos = [
   description={s.descripcionLarga}
 >
   <RocketCursor slot="cursor" />
+
+  <!-- ═══════════════════════════════════════
+       STICKY NAV DE SERVICIOS
+  ═══════════════════════════════════════ -->
+  <div id="serv-nav" aria-label="Navegar entre servicios">
+    <div class="sn-inner">
+      {servicios.map((item) => (
+        <a
+          href={`/servicios/${item.slug}`}
+          class={`sn-pill${item.slug === s.slug ? ' active' : ''}`}
+          data-slug={item.slug}
+        >
+          {item.nombreCorto}
+        </a>
+      ))}
+    </div>
+  </div>
 
   <!-- ═══════════════════════════════════════
        BREADCRUMB + MINI HERO
@@ -79,13 +89,13 @@ const pasos = [
       <div class="sub-grid">
         <!-- Texto -->
         <div class="sub-txt">
-          <div class="idx r">{s.numero} — {s.nombreCorto}</div>
-          <h1 class="lead sub-h1 r" data-d="1" id="sub-h1">
+          <div class="idx">{s.numero} — {s.nombreCorto}</div>
+          <h1 class="lead sub-h1" id="sub-h1">
             <span class="ln"><span>{s.nombre.split(' ').slice(0,-1).join(' ')}</span></span>
             <span class="ln"><span><em>{s.nombre.split(' ').slice(-1)[0]}.</em></span></span>
           </h1>
-          <p class="sub-desc r" data-d="2">{s.descripcionLarga}</p>
-          <div class="sub-acts r" data-d="3">
+          <p class="sub-desc" id="sub-desc">{s.descripcionLarga}</p>
+          <div class="sub-acts" id="sub-acts">
             <a
               href={`https://wa.me/573000000000?text=${s.whatsappText}`}
               class="btn-fill"
@@ -102,7 +112,7 @@ const pasos = [
         </div>
 
         <!-- Imagen destacada -->
-        <div class="sub-img-wrap r" data-d="2">
+        <div class="sub-img-wrap" id="sub-img-wrap">
           <div
             class="sub-frame"
             style={s.fotoPrincipal
@@ -214,12 +224,15 @@ const pasos = [
             href={`/servicios/${o.slug}`}
             class="otro-card r"
             data-d={String((i % 3) + 1)}
-            style={o.fotoPrincipal
-              ? `--oc-bg:url(${o.fotoPrincipal})`
-              : `--oc-bg:${o.gradiente}`}
             aria-label={o.nombre}
           >
-            <div class="oc-img" aria-hidden="true"></div>
+            <div
+              class="oc-img"
+              style={o.fotoPrincipal
+                ? `background-image:url(${o.fotoPrincipal})`
+                : `background:${o.gradiente}`}
+              aria-hidden="true"
+            ></div>
             <div class="oc-overlay" aria-hidden="true"></div>
             <div class="oc-body">
               <span class="oc-num">{o.numero}</span>
@@ -240,17 +253,31 @@ const pasos = [
   <!-- ═══════════════════════════════════════
        CTA FINAL
   ═══════════════════════════════════════ -->
-  <section id="cto-sub" class="sub-section-alt" aria-labelledby="cto-sub-title">
+  <!-- ═══════════════════════════════════════
+       CTA DOBLE
+  ═══════════════════════════════════════ -->
+  <section class="cto-serv-section" aria-labelledby="cto-title">
     <div class="cto-huge" aria-hidden="true">Crear</div>
     <div class="wrap">
-      <div class="cto-sub-inner r">
-        <div class="idx">¿Listo para empezar?</div>
-        <h2 class="lead" id="cto-sub-title">Hagamos <em>ruido.</em></h2>
-        <p>Cuéntanos qué necesitas. Respondemos en menos de 24 horas con una propuesta concreta y sin compromiso.</p>
-        <div class="cto-sub-acts">
+      <div class="cto-container">
+
+        <!-- Columna 1: WhatsApp -->
+        <div class="cto-card r" data-d="1">
+          <div class="cto-card-glow" aria-hidden="true"></div>
+          <div class="cto-card-header">
+            <div class="cto-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 21l1.6-4A8.5 8.5 0 1 1 8 19.4z"/>
+                <path d="M9 10c0 3 2 5 5 5"/>
+              </svg>
+            </div>
+            <span class="cto-card-kicker">Respuesta inmediata</span>
+          </div>
+          <h2 id="cto-title" class="cto-card-title">Respuesta rápida</h2>
+          <p class="cto-card-desc">Cuéntanos qué necesitas. Respondemos en menos de 24 horas con una propuesta concreta y sin compromiso.</p>
           <a
             href={`https://wa.me/573000000000?text=${s.whatsappText}`}
-            class="btn-fill"
+            class="btn-fill cto-card-btn"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -259,8 +286,30 @@ const pasos = [
               <path d="M5 12h14M13 6l6 6-6 6"/>
             </svg>
           </a>
-          <button class="btn-line" id="openContactSub2">Pedir cotización formal</button>
         </div>
+
+        <!-- Columna 2: Cotización Formal -->
+        <div class="cto-card r" data-d="2">
+          <div class="cto-card-glow" aria-hidden="true"></div>
+          <div class="cto-card-header">
+            <div class="cto-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <path d="M3 7l9 6 9-6"/>
+              </svg>
+            </div>
+            <span class="cto-card-kicker">Propuesta formal</span>
+          </div>
+          <h3 class="cto-card-title">Cotización formal</h3>
+          <p class="cto-card-desc">Prefiere un presupuesto detallado por escrito. Llena el formulario y te respondemos con una cotización estructurada.</p>
+          <button class="btn-outline cto-card-btn" id="openContactSub2">
+            Pedir cotización
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </button>
+        </div>
+
       </div>
     </div>
   </section>
@@ -274,22 +323,11 @@ const pasos = [
 .sub-section     { background: var(--bg); }
 .sub-section-alt { background: var(--ink); }
 
-/* ── BREADCRUMB ──
-   IMPORTANTE: Layout.astro tiene `nav { position:fixed; height:84px; z-index:300 }`
-   que se aplica a cualquier <nav>. Estos overrides evitan que el breadcrumb
-   se monte encima del nav principal. */
+/* ── BREADCRUMB ── */
 .breadcrumb {
-  position: static !important;
-  height: auto !important;
-  inset: auto !important;
-  z-index: auto !important;
-  border: none !important;
-  background: transparent !important;
-  backdrop-filter: none !important;
   display: flex; align-items: center; gap: 10px;
   font-size: 13px; color: var(--w40);
   margin-bottom: clamp(32px,5vw,56px);
-  padding: 0 !important;
 }
 .breadcrumb a { color: var(--w60); text-decoration: none; transition: color .3s; }
 .breadcrumb a:hover { color: var(--n); }
@@ -389,7 +427,7 @@ const pasos = [
 
 @media (max-width: 768px) {
   .proc-track { grid-template-columns: 1fr; gap: 28px; }
-  .proc-track::before { top: 10%; bottom: 10%; left: 28px; right: auto; width: 1px; height: auto; }
+  .proc-track::before { top: 28px; bottom: 28px; left: 28px; right: auto; width: 1px; height: auto; }
   .paso { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: start; }
   .paso-num { margin-bottom: 0; }
 }
@@ -495,7 +533,9 @@ const pasos = [
 
 .oc-img {
   position: absolute; inset: 0;
-  background: var(--oc-bg) center / cover no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   transition: transform .8s var(--ease);
 }
 .oc-overlay {
@@ -528,13 +568,217 @@ const pasos = [
 @media (max-width: 1024px) { .otros-grid { grid-template-columns: repeat(3,1fr); } }
 @media (max-width: 680px)  { .otros-grid { grid-template-columns: repeat(2,1fr); } }
 
-/* ── CTA FINAL SUB-PÁGINA ── */
-#cto-sub { position: relative; overflow: hidden; }
-.cto-sub-inner { position: relative; z-index: 2; max-width: 640px; }
-.cto-sub-inner .idx { margin-bottom: 16px; }
-.cto-sub-inner .lead { margin-bottom: clamp(16px,2.5vw,28px); }
-.cto-sub-inner > p { color: var(--w60); font-size: clamp(15px,1.4vw,18px); line-height: 1.7; margin-bottom: clamp(28px,4vw,44px); }
-.cto-sub-acts { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+/* ── CTA DOBLE ── */
+.cto-serv-section {
+  background: var(--ink);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(80px, 11vw, 150px) 0;
+}
+.cto-container {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px, 4vw, 48px);
+}
+.cto-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: clamp(30px, 5vw, 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: border-color 0.4s var(--ease), background 0.4s var(--ease), transform 0.4s var(--ease);
+  overflow: hidden;
+}
+.cto-card:hover {
+  border-color: rgba(232, 78, 27, 0.35);
+  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-4px);
+}
+.cto-card-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    300px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(232, 78, 27, 0.08),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+  z-index: 0;
+}
+.cto-card:hover .cto-card-glow {
+  opacity: 1;
+}
+.cto-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+.cto-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(232, 78, 27, 0.08);
+  border: 1px solid rgba(232, 78, 27, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--n);
+  transition: transform 0.4s var(--ease), background 0.4s var(--ease);
+}
+.cto-card:hover .cto-card-icon {
+  transform: scale(1.1) rotate(5deg);
+  background: rgba(232, 78, 27, 0.15);
+}
+.cto-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.cto-card-kicker {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--w40);
+}
+.cto-card-title {
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: clamp(24px, 3vw, 42px);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0 0 16px 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+.cto-card-desc {
+  font-size: clamp(14px, 1.2vw, 16px);
+  color: var(--w60);
+  line-height: 1.65;
+  margin: 0 0 36px 0;
+  max-width: 480px;
+  flex-grow: 1;
+  position: relative;
+  z-index: 1;
+}
+.cto-card-btn {
+  position: relative;
+  z-index: 1;
+}
+.btn-outline {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  color: #fff;
+  text-decoration: none;
+  padding: 17px 30px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'Sofia Sans', sans-serif;
+  cursor: none;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.btn-outline:hover {
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
+}
+.btn-outline svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s;
+}
+.btn-outline:hover svg {
+  transform: translateX(4px);
+  stroke: var(--ink);
+}
+@media (max-width: 860px) {
+  .cto-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* ── STICKY NAV (CÁPSULA FLOTANTE PREMIUM) ── */
+#serv-nav {
+  position: sticky;
+  top: 92px; /* Mayor espacio (28px) por debajo del navbar colapsado de 64px para dar aire visual */
+  z-index: 200;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  margin: 24px auto;
+  background: rgba(0, 16, 42, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  padding: 6px;
+  box-shadow: 
+    0 16px 36px rgba(0, 0, 0, 0.5), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* Oculto por defecto */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.95);
+  transition: 
+    opacity 0.4s var(--ease), 
+    visibility 0.4s var(--ease), 
+    transform 0.4s var(--ease);
+}
+#serv-nav.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+.sn-inner {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.sn-inner::-webkit-scrollbar { display: none; }
+
+.sn-pill {
+  flex-shrink: 0;
+  font-family: 'Sofia Sans Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--w60);
+  border: 1px solid transparent;
+  border-radius: 100px;
+  padding: 7px 16px;
+  background: transparent;
+  cursor: none;
+  transition: .3s var(--ease);
+  white-space: nowrap;
+}
+.sn-pill:hover { 
+  color: #fff; 
+  background: var(--n); 
+  border-color: var(--n); 
+}
+.sn-pill.active { 
+  color: var(--n); 
+  font-weight: 700;
+}
 </style>
 
 <script>
@@ -542,14 +786,36 @@ const pasos = [
 
   const prefersRM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ── STICKY NAV REVEAL ON SCROLL ── */
+  ScrollTrigger.create({
+    trigger: '#sub-hero',
+    start: 'bottom top+=92',
+    onEnter: () => document.getElementById('serv-nav')?.classList.add('visible'),
+    onLeaveBack: () => document.getElementById('serv-nav')?.classList.remove('visible'),
+    onRefresh: (self) => {
+      const nav = document.getElementById('serv-nav');
+      if (self.progress > 0) {
+        nav?.classList.add('visible');
+      } else {
+        nav?.classList.remove('visible');
+      }
+    }
+  });
+
   /* ── HERO ENTRANCE ── */
   if (!prefersRM) {
+    // Seteamos el estado inicial en JS de inmediato
+    gsap.set('.sub-txt .idx', { opacity: 0, y: 16 });
+    gsap.set('.sub-desc',     { opacity: 0, y: 20 });
+    gsap.set('.sub-acts',     { opacity: 0, y: 16 });
+    gsap.set('.sub-img-wrap', { opacity: 0, x: 30 });
+
     gsap.timeline({ defaults: { ease: 'power4.out' } })
-      .from('.sub-txt .idx',     { opacity: 0, y: 16, duration: .6 }, .15)
+      .to('.sub-txt .idx',     { opacity: 1, y: 0, duration: .6 }, .15)
       .from('.sub-h1 .ln span',  { y: '105%', stagger: .12, duration: .9 }, .25)
-      .from('.sub-desc',         { opacity: 0, y: 20, duration: .7 }, '-=.5')
-      .from('.sub-acts',         { opacity: 0, y: 16, duration: .6 }, '-=.4')
-      .from('.sub-img-wrap',     { opacity: 0, x: 30, duration: .9 }, .3);
+      .to('.sub-desc',         { opacity: 1, y: 0, duration: .7 }, '-=.5')
+      .to('.sub-acts',         { opacity: 1, y: 0, duration: .6 }, '-=.4')
+      .to('.sub-img-wrap',     { opacity: 1, x: 0, duration: .9 }, .3);
   }
 
   /* ── PROCESO — ANIMACIÓN SECUENCIAL ── */
@@ -582,4 +848,13 @@ const pasos = [
   };
   document.getElementById('openContactSub')?.addEventListener('click', openDialog);
   document.getElementById('openContactSub2')?.addEventListener('click', openDialog);
+
+  /* ── CTA CARDS — SPOTLIGHT DE CURSOR ───────────────── */
+  document.querySelectorAll<HTMLElement>('.cto-card').forEach(card => {
+    card.addEventListener('mousemove', (e: MouseEvent) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
 </script>

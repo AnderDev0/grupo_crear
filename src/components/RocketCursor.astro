@@ -40,7 +40,7 @@ import { gsap } from 'gsap';
   var flame  = document.getElementById('rocket-flame');
   if (!cursor || !svg || !flame) return;
 
-  gsap.to(cursor, { opacity: 1, duration: 0.4, delay: 0.5 });
+  gsap.to(cursor, { opacity: 1, duration: 0.2 });
 
   var mx = window.innerWidth / 2, my = window.innerHeight / 2;
   var px = mx, py = my;
@@ -54,10 +54,23 @@ import { gsap } from 'gsap';
 
   window.addEventListener('mousemove', function (e) { mx = e.clientX; my = e.clientY; });
 
-  // Clase .hot en elementos interactivos
-  document.querySelectorAll('a,button,input,select,textarea,.srow,.proj').forEach(function (el) {
-    el.addEventListener('mouseenter', function () { cursor!.classList.add('hot'); });
-    el.addEventListener('mouseleave', function () { cursor!.classList.remove('hot'); });
+  // Delegación de eventos para aplicar la clase .hot al cursor en elementos interactivos
+  document.body.addEventListener('mouseover', function (e) {
+    var target = e.target as HTMLElement | null;
+    if (!target) return;
+    var interactive = target.closest('a, button, input, select, textarea, .srow, .proj, .gal-pill, .sn-pill, .bc, .gal-item, .otro-card, .btn-line, .btn-fill, [role="button"]');
+    if (interactive) {
+      cursor!.classList.add('hot');
+    }
+  });
+
+  document.body.addEventListener('mouseout', function (e) {
+    var target = e.target as HTMLElement | null;
+    if (!target) return;
+    var interactive = target.closest('a, button, input, select, textarea, .srow, .proj, .gal-pill, .sn-pill, .bc, .gal-item, .otro-card, .btn-line, .btn-fill, [role="button"]');
+    if (interactive) {
+      cursor!.classList.remove('hot');
+    }
   });
 
   function spawn(x: number, y: number) {

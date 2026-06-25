@@ -9,6 +9,12 @@ export interface Foto {
   alt: string; // descripción accesible de la pieza física
 }
 
+export interface Paso {
+  num: string;
+  titulo: string;
+  desc: string;
+}
+
 export interface Servicio {
   slug: string;
   numero: string;
@@ -22,6 +28,7 @@ export interface Servicio {
   fotoPrincipal: string;  // fondo de la bento card (usa gradiente si está vacío)
   whatsappText: string;   // texto URL-encoded para pre-llenar WhatsApp
   gradiente: string;      // fallback CSS gradient cuando no hay foto
+  pasos: Paso[];          // metodología personalizada por servicio
 }
 
 export const servicios: Servicio[] = [
@@ -42,8 +49,6 @@ export const servicios: Servicio[] = [
       { svg: 'M7 21a4 4 0 0 1-4-4V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a4 4 0 0 1-4 4zm0 0h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h1z', nombre: 'Adhesivos y vinilos', desc: 'Corte, troquel y aplicación a la medida.' },
       { svg: 'M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16m-2-2l1.586-1.586a2 2 0 0 1 2.828 0L20 14m-6-6h.01M6 20h12a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2H6a2 2 0 0 1-2 2v12a2 2 0 0 1 2 2z', nombre: 'Canvas y lienzos', desc: 'Arte fino y decoración corporativa de alto impacto.' },
     ],
-    // Carpeta en /public: /Servicios/Impresion_Gran%20formato/
-    // Renombrar a minúsculas sin espacios si se cambia la carpeta.
     fotos: [
       { src: '/Servicios/Impresion_Gran%20formato/panoramica-exhibicion-museo-memoria.webp',         alt: 'Vista panorámica de la exhibición al aire libre con paneles, la carpa del Museo de Memoria de Colombia y edificios de Bogotá al fondo' },
       { src: '/Servicios/Impresion_Gran%20formato/modulo-museo-en-casa-frontal.webp',                 alt: 'Tótem expositivo verde de cuatro caras titulado Museo en casa, con fotografías y mapas departamentales, frente a un edificio en altura' },
@@ -73,6 +78,7 @@ export const servicios: Servicio[] = [
       { src: '/Servicios/Impresion_Gran%20formato/paneles-pueblo-bari-cuanto-tiempo-sanar.webp',      alt: 'Dos paneles expositivos naranjas, uno con la pregunta ¿Cuánto tiempo toma sanar? del pueblo Barí, y detrás un tótem del pueblo Nasa' },
       { src: '/Servicios/Impresion_Gran%20formato/panel-sanacion-colectiva-catatumbo-nasa.webp',      alt: 'Panel naranja ¿Por qué es importante la sanación colectiva? con fotografías del Catatumbo, junto al tótem del pueblo Nasa y rascacielos' },
       { src: '/Servicios/Impresion_Gran%20formato/panel-sanacion-colectiva-catatumbo-frontal.webp',   alt: 'Vista frontal del panel naranja ¿Por qué es importante la sanación colectiva? con fotografías del Catatumbo y la torre del DNP al fondo' },
+      { src: '/Servicios/Impresion_Gran%20formato/panel-sanacion-colectiva-catatumbo-nasa.webp',      alt: 'Panel naranja ¿Por qué es importante la sanación colectiva? con fotografías del Catatumbo, junto al tótem del pueblo Nasa y rascacielos' },
       { src: '/Servicios/Impresion_Gran%20formato/panel-sanacion-colectiva-kamentsa.webp',            alt: 'Paneles expositivos verdes del pueblo Kamëntsá con fotografías en blanco y negro, frente a torres de la ciudad' },
       { src: '/Servicios/Impresion_Gran%20formato/panel-sanacion-colectiva-catatumbo-edificio.webp',  alt: 'Panel naranja de sanación colectiva con fotografías del Catatumbo, frente a un edificio de ladrillo y vegetación' },
       { src: '/Servicios/Impresion_Gran%20formato/modulos-pueblo-bari-y-kamentsa.webp',               alt: 'Módulos del pueblo Barí, con un panel color teja y, al lado, el tótem del pueblo Kamëntsá con una fotografía en blanco y negro' },
@@ -84,6 +90,12 @@ export const servicios: Servicio[] = [
     fotoPrincipal: '/Servicios/Impresion_Gran%20formato/panoramica-exhibicion-museo-memoria.webp',
     whatsappText: encodeURIComponent('Hola, me interesa cotizar Impresión Gran Formato para mi empresa.'),
     gradiente: 'linear-gradient(135deg,#0a2d6b 0%,#001433 100%)',
+    pasos: [
+      { num: '01', titulo: 'Asesoría y Archivos', desc: 'Validamos tus archivos en resolución, color CMYK y sangrado, y te guiamos en la selección de materiales.' },
+      { num: '02', titulo: 'Prueba de Color', desc: 'Hacemos muestras reales de impresión para asegurar la fidelidad cromática y los acabados solicitados.' },
+      { num: '03', titulo: 'Impresión y Acabados', desc: 'Procesamiento en plotters industriales con tintas resistentes a la intemperie, sellado y colocación de ojetes.' },
+      { num: '04', titulo: 'Montaje Final', desc: 'Instalación y tensado profesional en sitio para garantizar el máximo impacto y durabilidad de la pieza.' },
+    ]
   },
   {
     slug: 'material-pop',
@@ -102,8 +114,6 @@ export const servicios: Servicio[] = [
       { svg: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2', nombre: 'Folletos y catálogos', desc: 'Diseño editorial e impresión de alta calidad.' },
       { svg: 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5z', nombre: 'Empaques y cajas', desc: 'Packaging con diseño y troquel personalizados.' },
     ],
-    // Fotos compartidas desde el proyecto Museo de Memoria — módulos, tótems, bancas y gráficas de piso
-    // son la evidencia más sólida de capacidad POP/exhibición de Grupo Crear.
     fotos: [
       { src: '/Servicios/Impresion_Gran%20formato/modulo-museo-en-casa-frontal.webp',          alt: 'Tótem expositivo de cuatro caras con fotografías y mapas departamentales, frente a un edificio en altura' },
       { src: '/Servicios/Impresion_Gran%20formato/modulo-museo-en-casa-vitrales.webp',         alt: 'Tótem expositivo visto en ángulo junto a arcos con vitrales de colores y otro módulo de la exhibición' },
@@ -121,6 +131,12 @@ export const servicios: Servicio[] = [
     fotoPrincipal: '/Servicios/Impresion_Gran%20formato/modulo-museo-en-casa-frontal.webp',
     whatsappText: encodeURIComponent('Hola, me interesa cotizar Material POP para activar mi punto de venta.'),
     gradiente: 'linear-gradient(135deg,#3a1306 0%,#04102a 100%)',
+    pasos: [
+      { num: '01', titulo: 'Visual Merchandising', desc: 'Analizamos el comportamiento en el punto de compra para diseñar exhibidores alineados a la interacción del cliente.' },
+      { num: '02', titulo: 'Prototipo y Estabilidad', desc: 'Desarrollamos mockups en modelado 3D y muestras físicas para evaluar resistencia, estabilidad de carga y ensamble.' },
+      { num: '03', titulo: 'Producción Directa', desc: 'Troquelado e impresión en alta definición directa sobre rígidos como cartón corrugado, acrílico, madera y poliestireno.' },
+      { num: '04', titulo: 'Despliegue y Logística', desc: 'Planificamos el empaque (colapsable plano) y la distribución para que el armado en canal retail sea rápido y sencillo.' },
+    ]
   },
   {
     slug: 'branding-identidad',
@@ -143,6 +159,12 @@ export const servicios: Servicio[] = [
     fotoPrincipal: '/alternativa_naranja3d.webp',
     whatsappText: encodeURIComponent('Hola, estoy interesado en el servicio de Branding e Identidad de Marca.'),
     gradiente: 'linear-gradient(135deg,#1a3b78 0%,#001433 100%)',
+    pasos: [
+      { num: '01', titulo: 'Inmersión y Estrategia', desc: 'Investigamos los valores del negocio, tu mercado y competencia para definir un posicionamiento diferencial sólido.' },
+      { num: '02', titulo: 'Universo Visual', desc: 'Diseñamos conceptos gráficos que abarcan logotipo, isotipo, tipografías corporativas y paletas cromáticas sobre mockups reales.' },
+      { num: '03', titulo: 'Manual y Lineamientos', desc: 'Creamos las directrices técnicas del comportamiento de la marca (retículas, márgenes de seguridad, usos permitidos y prohibidos).' },
+      { num: '04', titulo: 'Despliegue de Assets', desc: 'Suministramos la biblioteca completa de recursos gráficos en formatos vectoriales editables y listos para producción física o digital.' },
+    ]
   },
   {
     slug: 'fotografia-publicitaria',
@@ -165,6 +187,12 @@ export const servicios: Servicio[] = [
     fotoPrincipal: '',
     whatsappText: encodeURIComponent('Hola, quiero cotizar una sesión de Fotografía Publicitaria para mi empresa.'),
     gradiente: 'linear-gradient(135deg,#0a2550 0%,#04102a 100%)',
+    pasos: [
+      { num: '01', titulo: 'Dirección de Arte', desc: 'Planificamos la utilería, escenografías, esquemas conceptuales y paleta cromática ideal para el tipo de shoot.' },
+      { num: '02', titulo: 'Sesión Fotográfica', desc: 'Jornada de captura en estudio o locación real equipada con ópticas y sistemas de iluminación de calidad cinematográfica.' },
+      { num: '03', titulo: 'Revelado Digital', desc: 'Curamos las tomas del portafolio y realizamos el procesado digital básico para corregir exposición, rango dinámico y encuadre.' },
+      { num: '04', titulo: 'Edición y Retoque', desc: 'Limpieza fina de imperfecciones, silueteados técnicos y colorización avanzada para optimizar cada imagen según su destino.' },
+    ]
   },
   {
     slug: 'diseno-web',
@@ -187,6 +215,12 @@ export const servicios: Servicio[] = [
     fotoPrincipal: '',
     whatsappText: encodeURIComponent('Hola, quiero cotizar un sitio web para mi empresa con SEO incluido.'),
     gradiente: 'linear-gradient(135deg,#0a2d6b 0%,#001433 100%)',
+    pasos: [
+      { num: '01', titulo: 'Estructura y UX', desc: 'Elaboramos el mapa del sitio web, arquitectura de la información y wireframes estructurados para guiar al usuario a la conversión.' },
+      { num: '02', titulo: 'Diseño de Interfaz', desc: 'Creamos el layout visual del sitio en Figma, incorporando micro-interacciones, transiciones de marca y flujos adaptables.' },
+      { num: '03', titulo: 'Desarrollo y SEO', desc: 'Maquetamos la web utilizando metodologías que aseguran máxima velocidad de carga (Core Web Vitals) y SEO semántico para indexación.' },
+      { num: '04', titulo: 'Despliegue y Hosting', desc: 'Configuramos certificados SSL, dominios, scripts de analíticas web (GA4) y realizamos el lanzamiento final sin caídas de servicio.' },
+    ]
   },
   {
     slug: 'campanas-integrales',
@@ -209,5 +243,11 @@ export const servicios: Servicio[] = [
     fotoPrincipal: '',
     whatsappText: encodeURIComponent('Hola, me interesa cotizar una Campaña Integral para mi empresa.'),
     gradiente: 'linear-gradient(135deg,#b53c12 0%,#3a1306 100%)',
+    pasos: [
+      { num: '01', titulo: 'Gancho Creativo', desc: 'Desarrollamos el concepto maestro y el Key Visual (Idea Creativa) que servirá de pilar para todo el ecosistema de la campaña.' },
+      { num: '02', titulo: 'Plan de Formatos', desc: 'Determinamos el mix ideal de formatos digitales (redes, pauta) y físicos (BTL, impresos, POP) según tu presupuesto.' },
+      { num: '03', titulo: 'Producción Unificada', desc: 'Creamos y coordinamos la realización simultánea de piezas (fotografías, copys, adaptaciones impresas y banners de campaña).' },
+      { num: '04', titulo: 'Monitoreo y Reporte', desc: 'Lanzamos el despliegue sincronizado en canales y medimos los alcances, retornos y niveles de engagement del público.' },
+    ]
   },
 ];
