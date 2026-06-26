@@ -5,25 +5,43 @@ import ContactDialog from '../../components/ContactDialog.astro';
 import RocketCursor from '../../components/RocketCursor.astro';
 import { servicios } from '../../data/servicios';
 
-// Fotos para la galería: aplana todos los arrays fotos[] de cada servicio
-const todasFotos = servicios.flatMap(s =>
-  s.fotos.map(f => ({ src: f.src, alt: f.alt, slug: s.slug, cat: s.nombreCorto }))
-);
-const hayFotos = todasFotos.length > 0;
+// ── Galería: deduplicación por src + categorías múltiples ─────────────────
+// Problema: Material POP reutiliza fotos del mismo archivo que Gran Formato.
+// Si no deduplicamos, la misma imagen aparece en dos columnas distintas.
+// Solución: Map por src → { datos de foto, cats: [slug1, slug2, ...] }
+// Una foto puede pertenecer a varias categorías → el filtro la muestra en todas.
+type GalFoto = { src: string; alt: string; slug: string; cat: string; cats: string };
+
+const fotoMap = new Map<string, GalFoto>();
+servicios.forEach(srv => {
+  srv.fotos.forEach(f => {
+    if (fotoMap.has(f.src)) {
+      // Foto ya registrada → añadir esta categoría al data-cats (CSV)
+      const existing = fotoMap.get(f.src)!;
+      if (!existing.cats.includes(srv.slug)) {
+        existing.cats = existing.cats + ',' + srv.slug;
+      }
+    } else {
+      fotoMap.set(f.src, {
+        src:  f.src,
+        alt:  f.alt,
+        slug: srv.slug,
+        cat:  srv.nombreCorto,
+        cats: srv.slug,   // CSV de slugs: 'impresion-gran-formato' o 'impresion-gran-formato,material-pop'
+      });
+    }
+  });
+});
+const todasFotos = Array.from(fotoMap.values());
+const hayFotos   = todasFotos.length > 0;
 
 // ── Film strips ────────────────────────────────────────────────────────────
-// 5 columnas en "Todos", 4 cuando hay filtro activo.
-// Cada columna tiene su propio shuffle deterministico para que el orden de
-// fotos sea completamente diferente entre columnas (no solo desplazado).
-// Los delays negativos hacen que cada tira arranque en un punto distinto
-// de su ciclo → nunca parecen sincronizadas entre sí.
-
-// Shuffle LCG deterministico — mismo resultado en cada build (SSG)
-type Foto = { src: string; alt: string; slug: string; cat: string };
-function seededShuffle(arr: Foto[], seed: number): Foto[] {
+// 5 columnas. Velocidades entre 90-120s: lentas pero perceptibles.
+// Distribución no superpuesta: cada foto va a UNA sola columna.
+function seededShuffle(arr: GalFoto[], seed: number): GalFoto[] {
   const copy = [...arr];
-  let s = (seed * 1664525 + 1013904223) >>> 0;
-  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; };
+  let state = (seed * 1664525 + 1013904223) >>> 0;
+  const rnd = () => { state = (state * 1664525 + 1013904223) >>> 0; return state / 0x100000000; };
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
@@ -32,15 +50,12 @@ function seededShuffle(arr: Foto[], seed: number): Foto[] {
 }
 
 const STRIP_COLS  = 5;
-const stripSpeeds = [240, 300, 200, 270, 220] as const;
-const stripDelays = [0, -110, -55, -185, -80] as const;
+// Velocidades lentas pero visibles (90-120s) — antes eran 240-300s (imperceptibles)
+const stripSpeeds = [110, 135, 95, 125, 105] as const;
+const stripDelays = [0, -48, -22, -78, -35]  as const;
 
-// DISTRIBUCIÓN NO SUPERPUESTA:
-// 1. shuffle global de todas las fotos
-// 2. split en 5 chunks sin solapamiento → cada foto va a UNA SOLA columna
-// Así nunca puede aparecer la misma foto en dos columnas a la vez.
-const allShuffled  = seededShuffle(todasFotos, 42);
-const chunkSize    = Math.ceil(allShuffled.length / STRIP_COLS);
+const allShuffled   = seededShuffle(todasFotos, 42);
+const chunkSize     = Math.ceil(allShuffled.length / STRIP_COLS);
 const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   allShuffled.slice(ci * chunkSize, Math.min((ci + 1) * chunkSize, allShuffled.length))
 );
@@ -75,19 +90,6 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
           Del concepto a la producción — diseño, impresión,<br aria-hidden="true">
           branding y digital bajo un mismo equipo creativo.
         </p>
-
-        <!-- Pills de servicios (accesos rápidos) -->
-        <div class="sh-pills" id="sh-pills">
-          {servicios.map(s => (
-            <a
-              href={`/servicios/${s.slug}`}
-              class="sh-pill"
-              aria-label={`Ir a ${s.nombre}`}
-            >
-              {s.nombreCorto}
-            </a>
-          ))}
-        </div>
       </div>
 
       <!-- Collage flotante -->
@@ -105,6 +107,21 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
           </video>
         </div>
       </div>
+    </div>
+
+    <!-- Pills de servicios — isla glass centrada, debajo del grid del hero -->
+    <div class="sh-pills-row">
+      <nav class="sh-pills" id="sh-pills" aria-label="Ir a servicio">
+        {servicios.map(s => (
+          <a
+            href={`/servicios/${s.slug}`}
+            class="sh-pill"
+            aria-label={`Ver ${s.nombre}`}
+          >
+            {s.nombreCorto}
+          </a>
+        ))}
+      </nav>
     </div>
   </section>
 
@@ -219,17 +236,17 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
               style={`--spd:${stripSpeeds[ci]}s; --dly:${stripDelays[ci]}s`}
             >
               <div class="gal-track">
-                {/* Set A — ítems reales */}
+                {/* Set A — ítems reales (data-cats = CSV de categorías) */}
                 {colFotos.map(f => (
-                  <div class="gal-si" data-cat={f.slug}>
+                  <div class="gal-si" data-cats={f.cats} data-cat={f.slug}>
                     <div class="gal-protect" aria-hidden="true"></div>
                     <img src={f.src} alt={f.alt} loading="lazy" draggable="false" />
                     <span class="gal-badge">{f.cat}</span>
                   </div>
                 ))}
-                {/* Set B — duplicado para loop sin costura */}
+                {/* Set B — duplicado para loop sin costura (aria-hidden, sin badge) */}
                 {colFotos.map(f => (
-                  <div class="gal-si" data-cat={f.slug} aria-hidden="true">
+                  <div class="gal-si" data-cats={f.cats} data-cat={f.slug} aria-hidden="true">
                     <div class="gal-protect" aria-hidden="true"></div>
                     <img src={f.src} alt="" loading="lazy" draggable="false" />
                   </div>
@@ -319,10 +336,11 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 /* ── HERO ── */
 #serv-hero {
   position: relative;
-  min-height: 72vh;
+  min-height: 90vh;                   /* altura generosa para respirar */
   display: flex;
-  align-items: center;
-  padding: calc(84px + clamp(60px,8vw,100px)) clamp(20px,5vw,64px) clamp(60px,8vw,100px);
+  flex-direction: column;             /* apila: grid arriba, pills abajo */
+  justify-content: space-between;     /* grid al top, pills al bottom */
+  padding: calc(84px + clamp(48px,7vw,80px)) clamp(20px,5vw,64px) 0;
   overflow: hidden;
   background: var(--bg);
 }
@@ -367,6 +385,8 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   grid-template-columns: 1fr 1fr;
   gap: clamp(40px,6vw,80px);
   align-items: center;
+  flex: 1;                /* ocupa todo el espacio vertical disponible */
+  align-self: stretch;
 }
 
 /* Texto */
@@ -383,30 +403,77 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
   opacity: 0;
 }
 
-.sh-pills {
+/* Fila centrada — ancla la isla al fondo del hero */
+.sh-pills-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: clamp(24px,3.5vw,40px);
-  opacity: 0;
+  justify-content: center;
+  /* padding vertical: pequeño arriba (separa del collage), generoso abajo */
+  padding: clamp(20px,3vw,36px) clamp(20px,5vw,64px) clamp(28px,4vw,44px);
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;  /* no se comprime cuando el grid crece */
 }
 
+/* Isla glass — misma arquitectura que #serv-nav y .gal-filters */
+.sh-pills {
+  /* Reset de <nav> para que el selector global nav{position:fixed} no aplique */
+  position: static !important;
+  inset: auto !important;
+  height: auto !important;
+  z-index: auto !important;
+  border: none;
+  background: transparent;
+
+  /* Glass island */
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  opacity: 0; /* GSAP revela */
+
+  background: rgba(0, 16, 42, 0.68);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  padding: 5px;
+  box-shadow:
+    0 20px 52px rgba(0,0,0,.52),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 0 0 1px rgba(232,78,27,.06);
+
+  max-width: calc(100vw - 40px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.sh-pills::-webkit-scrollbar { display: none; }
+
+/* Pills individuales */
 .sh-pill {
-  display: inline-block;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
   font-family: 'Sofia Sans Condensed', sans-serif;
-  font-size: 12px;
-  letter-spacing: .15em;
+  font-size: 11px;
+  letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--w60);
-  border: 1px solid var(--w12);
+  border: 1px solid transparent;
   border-radius: 100px;
-  padding: 8px 20px;
+  padding: 8px 18px;
   background: transparent;
   cursor: none;
-  transition: .35s var(--ease);
+  white-space: nowrap;
+  transition: color .3s var(--ease), background .3s var(--ease),
+              border-color .3s, box-shadow .3s;
 }
-.sh-pill:hover { color: #fff; border-color: var(--n); background: rgba(232,78,27,.1); }
+.sh-pill:hover {
+  color: #fff;
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.1);
+}
+/* No hay "active" en los pills del hero (todos son iguales hasta que el usuario elige) */
 
 /* Collage flotante */
 .sh-collage {
@@ -615,20 +682,67 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 .gal-header .lead { margin-top: 12px; margin-bottom: 16px; }
 .gal-header > p { color: var(--w60); font-size: 16px; }
 
+/* ── FILTROS — Glass Island (mismo lenguaje que #serv-nav) ── */
 .gal-filters {
-  display: flex; gap: 10px; flex-wrap: wrap;
-  margin-top: clamp(20px,3vw,32px);
+  /* Isla flotante con glassmorphism */
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  margin-top: clamp(28px,4vw,44px);
+
+  /* Glass */
+  background: rgba(0, 16, 42, 0.68);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+
+  /* Forma y borde */
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,.08);
+  padding: 5px;
+
+  /* Sombras: exterior oscura + borde interior de luz + halo naranja muy sutil */
+  box-shadow:
+    0 20px 52px rgba(0,0,0,.52),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 0 0 1px rgba(232,78,27,.06);
+
+  /* Scroll horizontal en mobile, sin scrollbar visible */
+  max-width: calc(100vw - 40px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.gal-filters::-webkit-scrollbar { display: none; }
+
+/* Pills dentro de la isla */
 .gal-pill {
+  flex-shrink: 0;
   font-family: 'Sofia Sans Condensed', sans-serif;
-  font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--w60); border: 1px solid var(--w12);
-  border-radius: 100px; padding: 9px 22px;
-  background: transparent; cursor: none;
-  transition: .35s var(--ease);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--w60);
+  border: 1px solid transparent;
+  border-radius: 100px;
+  padding: 8px 18px;
+  background: transparent;
+  cursor: none;
+  white-space: nowrap;
+  transition: color .3s var(--ease), background .3s var(--ease),
+              border-color .3s, box-shadow .3s;
 }
-.gal-pill:hover { border-color: rgba(232,78,27,.4); color: #fff; }
-.gal-pill.active { background: var(--n); border-color: var(--n); color: #fff; }
+.gal-pill:hover {
+  color: #fff;
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.1);
+}
+.gal-pill.active {
+  background: var(--n);
+  color: #fff;
+  border-color: var(--n);
+  /* Glow naranja en el pill activo */
+  box-shadow: 0 4px 18px rgba(232,78,27,.4), inset 0 1px 0 rgba(255,255,255,.15);
+}
 
 /* Contenedor de tiras */
 .gal-strip {
@@ -693,14 +807,16 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 }
 .gal-si:hover img { transform: scale(1.04); }
 
-/* Patrón rotativo de 6 alturas:
-   cuadrados, rectangulos altos, y proporciones intermedias */
-.gal-si:nth-child(6n+1) img { height: clamp(180px,17vw,260px); }   /* medio-alto */
-.gal-si:nth-child(6n+2) img { height: clamp(140px,13vw,190px); }   /* casi cuadrado */
-.gal-si:nth-child(6n+3) img { height: clamp(240px,23vw,340px); }   /* alto / retrato */
-.gal-si:nth-child(6n+4) img { height: clamp(150px,14vw,200px); }   /* cuadrado */
-.gal-si:nth-child(6n+5) img { height: clamp(200px,19vw,280px); }   /* medio */
-.gal-si:nth-child(6n+6) img { height: clamp(110px,10vw,160px); }   /* panorámico / bajo */
+/* Patrón de 7 alturas — basado en la referencia visual:
+   mezcla proporciones reales de fotografía (2:3, 4:3, 1:1, 16:9)
+   con diferencias dramáticas para ritmo orgánico y no predecible */
+.gal-si:nth-child(7n+1) img { height: clamp(195px,18vw,270px); }   /* paisaje 4:3 */
+.gal-si:nth-child(7n+2) img { height: clamp(340px,32vw,440px); }   /* retrato alto 2:3 */
+.gal-si:nth-child(7n+3) img { height: clamp(145px,13vw,195px); }   /* panorámico 16:9 */
+.gal-si:nth-child(7n+4) img { height: clamp(265px,25vw,355px); }   /* retrato 3:4 */
+.gal-si:nth-child(7n+5) img { height: clamp(215px,20vw,285px); }   /* cuadrado aprox. */
+.gal-si:nth-child(7n+6) img { height: clamp(295px,28vw,395px); }   /* retrato muy alto */
+.gal-si:nth-child(7n+7) img { height: clamp(165px,15vw,225px); }   /* paisaje corto */
 
 .gal-protect { position: absolute; inset: 0; z-index: 2; }
 
@@ -971,9 +1087,10 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
       /* Pausa los strips al filtrar (se reanudan al volver a "Todos") */
       strip?.classList.toggle('is-filtered', !isAll);
 
-      /* Atenúa ítems que no coinciden en AMBOS sets (A y B del loop) */
+      /* Atenúa ítems que no coinciden — usa data-cats (CSV) para multi-categoría */
       document.querySelectorAll<HTMLElement>('.gal-si').forEach(si => {
-        const match = isAll || si.dataset.cat === filter;
+        const cats = (si.dataset.cats ?? si.dataset.cat ?? '').split(',');
+        const match = isAll || cats.includes(filter);
         si.classList.toggle('gal-si-hidden', !match);
       });
     });

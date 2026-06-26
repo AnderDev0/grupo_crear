@@ -1,7 +1,38 @@
 ---
+import { readFileSync } from 'node:fs';
+import { resolve }       from 'node:path';
+
 // Año calculado en build time. El script del cliente lo actualiza en runtime
 // por si el sitio no se rebuilds el 1 de enero.
 const year = new Date().getFullYear();
+
+// ── Logo SVG inline ──────────────────────────────────────────────────────────
+// Mismo proceso que LogoDisplace.astro:
+//  1. Elimina el rectángulo de fondo azul (path12)
+//  2. Recorta el viewBox al área útil (cohete + texto)
+//  3. Fuerza width/height 100% para que el contenedor controle el tamaño
+let footerLogo = '';
+try {
+  let raw = readFileSync(resolve('./public/nuevo-logo-Grupo-Crear-vector-hor.svg'), 'utf-8');
+  raw = raw.replace(/<\?xml[\s\S]*?\?>/g, '').trim();
+  raw = raw.replace(/<metadata[\s\S]*?<\/metadata>/gi, '');
+  raw = raw.replace(/<path[^>]*id="path12"[^>]*\/>/gi, '');
+  raw = raw.replace(
+    /<svg\b([^>]*)>/i,
+    (_m: string, a: string) => {
+      const c = a
+        .replace(/\s+xmlns:[a-z]+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+xml:[a-z]+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+version\s*=\s*["'][^"']*["']/gi,     '')
+        .replace(/\s+id\s*=\s*["'][^"']*["']/gi,          '')
+        .replace(/\s+width\s*=\s*["'][^"']*["']/gi,       '')
+        .replace(/\s+height\s*=\s*["'][^"']*["']/gi,      '')
+        .replace(/\s+viewBox\s*=\s*["'][^"']*["']/gi,     '');
+      return `<svg${c} viewBox="215 242 790 212" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">`;
+    }
+  );
+  footerLogo = raw;
+} catch (_e) { /* fallback: muestra nada si el SVG no existe */ }
 
 // ── Vínculos legales ──────────────────────────────────────────────────────────
 // REGLA: cambiar active: false → true SOLO cuando la página esté
@@ -23,8 +54,12 @@ const activeLinks = legalLinks.filter((l) => l.active);
   <div class="foot-top">
 
     <div class="foot-brand">
-      <!-- aria-hidden en el punto decorativo: es ornamental, no contenido -->
-      <b>CREAR<em aria-hidden="true">.</em></b>
+      <!-- Logo SVG inline — mismo tratamiento que LogoDisplace en el nav -->
+      <a href="/" class="foot-logo-link" aria-label="Grupo Crear — inicio">
+        <div class="foot-logo-wrap" aria-hidden="true">
+          <Fragment set:html={footerLogo} />
+        </div>
+      </a>
       <p>Agencia de publicidad y soluciones gráficas. Hacemos que tu marca se vea, se recuerde y venda.</p>
     </div>
 
@@ -133,6 +168,22 @@ const activeLinks = legalLinks.filter((l) => l.active);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+
+  /* ── Logo en el footer ──────────────────────────────────────────────── */
+  .foot-logo-link {
+    display: inline-block;
+    text-decoration: none;
+    transition: opacity .3s;
+    margin-bottom: 18px;
+  }
+  .foot-logo-link:hover { opacity: .75; }
+  .foot-logo-wrap {
+    /* viewBox ratio 790/212 ≈ 3.726 → a 72px de alto: 72 × 3.726 ≈ 268px */
+    width: 268px;
+    height: 72px;
+    overflow: visible;
+  }
+  .foot-logo-wrap svg { display: block; width: 100%; height: 100%; }
 
   /* ── Columnas del footer ─────────────────────────────────────────────── */
   .fcol-head {

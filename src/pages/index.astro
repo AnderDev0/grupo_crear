@@ -618,9 +618,9 @@ import Footer from '../components/Footer.astro';
       const cards       = gsap.utils.toArray<HTMLElement>('.card-parallax');
       const redOffset   = document.getElementById('red-offset');
       const blueOffset  = document.getElementById('blue-offset');
-      const logoGroup   = document.getElementById('logo-hero-paths')  as SVGGElement           | null;
-      const logoOverlay = document.getElementById('logo-hero-overlay') as HTMLElement          | null;
-      const overlayGrad = document.getElementById('overlay-grad')      as SVGRadialGradientElement | null;
+      const logoGroup   = document.getElementById('logo-hero-paths')    as SVGGElement  | null;
+      const logoStroke  = document.getElementById('logo-stroke-group') as SVGGElement  | null;
+      const logoOverlay = document.getElementById('logo-hero-overlay') as HTMLElement  | null;
 
       // Aberración cromática reactiva a velocidad de scroll (Lenis velocity → feOffset)
       let aberLerp = 0;
@@ -640,28 +640,6 @@ import Footer from '../components/Footer.astro';
 
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-
-      // ── Gradiente circular — setup inicial ────────────────────────────────
-      // Radio inicial: 35% del lado corto → círculo que cubre todo el logo.
-      // Radio final:   130% del lado corto → cubre el viewport completo
-      //                antes de que el overlay se desvanezca (t:0.75).
-      // Centro vertical: 50% (centrado en el viewport donde vive el logo).
-      const gradR0   = Math.min(vw, vh) * 0.35;
-      const gradREnd = Math.min(vw, vh) * 1.3;
-      const gradCx   = vw / 2;
-      const gradCy   = vh / 2;
-      if (overlayGrad) {
-        overlayGrad.setAttribute('cx', String(gradCx));
-        overlayGrad.setAttribute('cy', String(gradCy));
-        overlayGrad.setAttribute('r',  String(gradR0));
-        // Oval orientado hacia la punta del cohete (esquina superior-derecha).
-        // rotate(-50) = -50° desde horizontal = dirección upper-right en SVG (y↓).
-        // scale(1.55, 0.80) = eje mayor 1.55× hacia el cohete, menor 0.80× perpendicular.
-        // translate(cx cy) … translate(-cx -cy) = rotación/escala alrededor del centro.
-        overlayGrad.setAttribute('gradientTransform',
-          `translate(${gradCx} ${gradCy}) rotate(-50) scale(1.55 0.80) translate(${-gradCx} ${-gradCy})`
-        );
-      }
 
       // ── Single scrubbed timeline con pin ─────────────────────────────────
       //
@@ -691,39 +669,27 @@ import Footer from '../components/Footer.astro';
           onRefresh() {
             const w = window.innerWidth;
             const h = window.innerHeight;
-            if (logoGroup) {
-              gsap.set(logoGroup, { svgOrigin: `${w / 2} ${h / 2}` });
-            }
-            if (overlayGrad) {
-              const ocx = w / 2;
-              const ocy = h / 2;
-              overlayGrad.setAttribute('cx', String(ocx));
-              overlayGrad.setAttribute('cy', String(ocy));
-              overlayGrad.setAttribute('r',  String(Math.min(w, h) * 0.35));
-              overlayGrad.setAttribute('gradientTransform',
-                `translate(${ocx} ${ocy}) rotate(-45) scale(1.58 1.08) translate(${-ocx} ${-ocy})`
-              );
-            }
+            const origin = `${w / 2} ${h / 2}`;
+            if (logoGroup)  gsap.set(logoGroup,  { svgOrigin: origin });
+            if (logoStroke) gsap.set(logoStroke, { svgOrigin: origin });
           },
         },
       });
 
       // ── Fase A: Logo zoom (t:0 → 1.0) ────────────────────────────────────
+      const origin = `${vw / 2} ${vh / 2}`;
       if (logoGroup) {
         tl.fromTo(logoGroup,
-          { scale: 1,  svgOrigin: `${vw / 2} ${vh / 2}` },
+          { scale: 1,  svgOrigin: origin },
           { scale: 55, ease: 'power2.in', duration: 1.0 },
           0,
         );
       }
-      // Gradiente: radio expande en sync con el logo zoom.
-      // duration:0.75 = termina exactamente cuando el overlay empieza a
-      // desvanecerse (t:0.75) → color y overlay desaparecen juntos, nunca desfasados.
-      // gradREnd (130% del lado corto) cubre el viewport completo al terminar.
-      if (overlayGrad) {
-        tl.fromTo(overlayGrad,
-          { attr: { r: gradR0 } },
-          { attr: { r: gradREnd }, ease: 'power2.in', duration: 0.75 },
+      // El trazo naranja escala en sincronía exacta con el logo-mask
+      if (logoStroke) {
+        tl.fromTo(logoStroke,
+          { scale: 1,  svgOrigin: origin },
+          { scale: 55, ease: 'power2.in', duration: 1.0 },
           0,
         );
       }
@@ -769,30 +735,7 @@ import Footer from '../components/Footer.astro';
         );
       }
 
-      // ── Header reactivo (Fase A) ──────────────────────────────────────────
-      // El overlay blanco/naranja entra en Fase A.
-      // El header tiene texto blanco que se pierde sobre blanco → lo volvemos
-      // oscuro/naranja mientras el overlay esté activo, luego restaura.
-      //
-      // logoWrap: filter:brightness(0) → todas las rutas SVG se vuelven negras
-      //   (el cohete naranja, las letras "GRUPO CREAR" y el tagline → todos
-      //   negros = perfectamente legibles sobre blanco/naranja).
-      //
-      // Links del menú: navy (#001433) sobre blanco/naranja → máximo contraste.
-      // Burger spans: también navy para mobile.
-      //
-      // Restauración en t:0.82 (cuando overlay ya casi desapareció) →
-      // logo vuelve a su apariencia normal, links vuelven a blanco/60%.
-
-      // Entrada — t:0.05 (casi inmediato al primer scroll)
-      tl.to('#logoWrap', { filter: 'brightness(0)', duration: 0.2 }, 0.05);
-      tl.to('#menu a:not(.cta)', { color: '#001433', duration: 0.2 }, 0.05);
-      tl.to('.burger span', { backgroundColor: '#001433', duration: 0.2 }, 0.05);
-
-      // Salida — t:0.78 (antes de que Fase B empiece)
-      tl.to('#logoWrap', { filter: 'brightness(1)', duration: 0.2 }, 0.78);
-      tl.to('#menu a:not(.cta)', { color: 'rgba(255,255,255,0.6)', duration: 0.2 }, 0.78);
-      tl.to('.burger span', { backgroundColor: '#ffffff', duration: 0.2 }, 0.78);
+      // Header: Lightfall es oscuro (navy) → logo y links blancos son legibles sin ajustes.
 
       // ── Fase B: Dispersión cards + meteor (t:1.0 → 2.0) ──────────────────
       cards.forEach((card) => {

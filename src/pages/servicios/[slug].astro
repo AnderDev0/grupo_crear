@@ -24,8 +24,11 @@ const hayFotos = s.fotos.length > 0;
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
   const copy = [...arr];
-  let s2 = (seed * 1664525 + 1013904223) >>> 0;
-  const rnd = () => { s2 = (s2 * 1664525 + 1013904223) >>> 0; return s2 / 0x100000000; };
+  let state = (seed * 1664525 + 1013904223) >>> 0;
+  const rnd = () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
@@ -475,13 +478,14 @@ const pasos = s.pasos;
   pointer-events: none; -webkit-user-drag: none;
   transition: transform .9s var(--ease);
 }
-/* Mismo patrón de alturas variadas que la galería overview */
-.gal-item-sub:nth-child(6n+1) img { height: clamp(180px,17vw,260px); }
-.gal-item-sub:nth-child(6n+2) img { height: clamp(140px,13vw,190px); }
-.gal-item-sub:nth-child(6n+3) img { height: clamp(240px,23vw,340px); }
-.gal-item-sub:nth-child(6n+4) img { height: clamp(150px,14vw,200px); }
-.gal-item-sub:nth-child(6n+5) img { height: clamp(200px,19vw,280px); }
-.gal-item-sub:nth-child(6n+6) img { height: clamp(110px,10vw,160px); }
+/* Mismo patrón de 7 alturas que la galería overview — referencia masonry variado */
+.gal-item-sub:nth-child(7n+1) img { height: clamp(195px,18vw,270px); }  /* paisaje 4:3 */
+.gal-item-sub:nth-child(7n+2) img { height: clamp(340px,32vw,440px); }  /* retrato alto 2:3 */
+.gal-item-sub:nth-child(7n+3) img { height: clamp(145px,13vw,195px); }  /* panorámico 16:9 */
+.gal-item-sub:nth-child(7n+4) img { height: clamp(265px,25vw,355px); }  /* retrato 3:4 */
+.gal-item-sub:nth-child(7n+5) img { height: clamp(215px,20vw,285px); }  /* cuadrado aprox. */
+.gal-item-sub:nth-child(7n+6) img { height: clamp(295px,28vw,395px); }  /* retrato muy alto */
+.gal-item-sub:nth-child(7n+7) img { height: clamp(165px,15vw,225px); }  /* paisaje corto */
 .gal-item-sub:hover img { transform: scale(1.04); }
 
 .gal-protect { position: absolute; inset: 0; z-index: 2; }

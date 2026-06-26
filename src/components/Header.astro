@@ -50,9 +50,18 @@ import LogoDisplace from './LogoDisplace.astro';
   const burger = document.getElementById('burger');
   const menu   = document.getElementById('menu');
 
+  // El header permanece transparente durante toda la fase del Lightfall/máscara.
+  // Solo adquiere fondo sólido cuando #hero-content (segundo fold) entra al viewport,
+  // que ocurre después de que el pin de #hero-visual completa su scroll (≈160vh).
+  const heroContent = document.getElementById('hero-content');
+
   window.addEventListener('scroll', () => {
     if (!nav) return;
-    if (window.scrollY > 50) {
+    const isScrolled = heroContent
+      ? heroContent.getBoundingClientRect().top < window.innerHeight * 0.85
+      : window.scrollY > 50;
+
+    if (isScrolled) {
       nav.classList.add('h-[64px]', 'bg-[#00102a]/72', 'backdrop-blur-[24px]', 'border-white/6');
       nav.classList.remove('h-[84px]', 'border-transparent');
     } else {
