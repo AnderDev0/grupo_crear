@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import LogoIntro from '../components/LogoIntro.astro';
+
 import RocketCursor from '../components/RocketCursor.astro';
 import ContactDialog from '../components/ContactDialog.astro';
 import MeteorScroll from '../components/MeteorScroll.astro';
@@ -12,8 +12,7 @@ import Footer from '../components/Footer.astro';
   title="Grupo Crear — Agencia de Publicidad · Bogotá, Colombia"
   description="Agencia de publicidad y soluciones gráficas. Impresión gran formato, material POP, branding y diseño web en Colombia."
 >
-  <!-- Overlay de intro cinématico — se oculta tras el zoom reveal -->
-  <LogoIntro slot="intro" />
+
 
   <RocketCursor slot="cursor" />
 
@@ -25,7 +24,7 @@ import Footer from '../components/Footer.astro';
 
     <!-- El Meteoro central (visible al inicio detrás de la máscara) -->
     <div class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none opacity-100" id="meteor-container">
-      <div id="meteor-inner" class="w-[450px] h-[450px]">
+      <div id="meteor-inner" class="w-[680px] h-[680px]">
         <MeteorScroll />
       </div>
     </div>
@@ -116,7 +115,7 @@ import Footer from '../components/Footer.astro';
         line-height:1.3;
         margin:0;
         max-width:520px;
-        opacity:1;
+        opacity:0;
         pointer-events:none;
       "
     >
@@ -524,22 +523,76 @@ import Footer from '../components/Footer.astro';
   // • scrub:1.4 en cards = inercia lerp (≈ positionLerp:0.05 a 60fps)
   // • scrub:1.8 en meteoro = más "masa" que las tarjetas (≈ rotationLerp:0.26)
   // • ease-expo en textos = cubic-bezier(.16,1,.3,1) idéntico a Podium
-  window.addEventListener('intro:complete', () => {
+  window.addEventListener('load:complete', () => {
+    const preloader   = document.getElementById('preloader');
+    const logoOverlay = document.getElementById('logo-hero-overlay');
+    const nav         = document.getElementById('nav');
+    const navElements = document.querySelectorAll('#nav-brand, #nav .menu li, #burger');
+    const taglineEl   = document.getElementById('hero-visual-tagline');
 
     // ── Activar videos del collage — diferidos para no competir con el intro ──
-    // Los <source data-src="..."> no tienen src hasta este momento,
-    // así que el browser no descarga ni decodifica estos videos durante
-    // los primeros ~3s (duración del intro). Esto libera ancho de banda
-    // para el LCP y reduce el TBT en la carga inicial.
     document.querySelectorAll<HTMLSourceElement>('#collage-container source[data-src]').forEach((s) => {
       s.src = s.dataset.src!;
       (s.parentElement as HTMLVideoElement | null)?.load();
     });
 
-    // ── Indicador de scroll ─────────────────────────────────────────────────
-    gsap.set('#scroll-indicator', { opacity: 1 });
+    // Revelar el overlay del canvas (detrás del preloader) e inicializar estados de la UI
+    if (logoOverlay) {
+      gsap.set(logoOverlay, { opacity: 1 });
+    }
+    if (nav) {
+      gsap.set(nav, { opacity: 1 });
+      nav.style.pointerEvents = 'auto'; // Habilitar clics
+    }
 
-    // ── Tagline visual — split por carácter + stagger aleatorio ─────────────
+    // ── Timeline de entrada cinemático coordinado ───────────────────────────
+    const tl = gsap.timeline({
+      onComplete: () => {
+        if (preloader) {
+          preloader.style.display = 'none';
+        }
+        document.documentElement.classList.remove('loading');
+        // Despachar intro:complete para inicializar el sistema de scroll
+        window.dispatchEvent(new CustomEvent('intro:complete'));
+      }
+    });
+
+    // 1. Desvanecer el preloader (Capa 1)
+    if (preloader) {
+      tl.to(preloader, {
+        opacity: 0,
+        duration: 1.5,
+        ease: 'expo.out',
+      }, 0);
+    }
+
+    // 2. Encendido progresivo de las estelas del canvas (Capa 2)
+    // Solapamiento: inicia a los 1.0s (0.5s antes de que termine el preloader)
+    if ((window as any).lightfall) {
+      tl.to((window as any).lightfall, {
+        progress: 1.0,
+        duration: 3.5,
+        ease: 'expo.out',
+      }, 1.0);
+    }
+
+    // 3. Stagger en cascada para los elementos de navegación (Slide down + Fade-in)
+    if (navElements.length) {
+      tl.fromTo(navElements,
+        { opacity: 0, y: -25 },
+        { opacity: 1, y: 0, duration: 1.5, ease: 'expo.out', stagger: 0.08 },
+        1.0
+      );
+    }
+
+    // 4. Stagger para tarjetas, meteoro y scroll indicator (Slide up + Scale + Fade-in)
+    tl.fromTo(['#collage-container', '#meteor-container', '#scroll-indicator'],
+      { opacity: 0, y: 35, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1.0, duration: 2.0, ease: 'expo.out', stagger: 0.15 },
+      1.2
+    );
+
+    // 5. Stagger de letras del tagline
     //
     // splitTaglineChars():
     //   Lee el HTML del <p> (respetando <br>), reemplaza su contenido con un
@@ -547,9 +600,6 @@ import Footer from '../components/Footer.astro';
     //   Los espacios quedan como TextNodes simples (no afectan el kerning).
     //   Los <br> se recrean con aria-hidden para no interferir con el aria-label del <p>.
     //   Devuelve el array de spans animables (.tchar).
-    //
-    // Entrada: letras aparecen en orden aleatorio con leve rise (y:6 → y:0).
-    // prefers-reduced-motion: salta la animación, muestra directo.
     function splitTaglineChars(el: HTMLElement): HTMLElement[] {
       const lines = el.innerHTML.split(/<br\b[^>]*>/i);
       el.innerHTML = '';
@@ -578,24 +628,26 @@ import Footer from '../components/Footer.astro';
       return chars;
     }
 
-    const taglineEl    = document.getElementById('hero-visual-tagline') as HTMLElement | null;
-    const taglineChars = taglineEl ? splitTaglineChars(taglineEl) : [];
-    const prefersRM    = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (taglineEl) {
+      taglineEl.style.opacity = '1';
+      const taglineChars = splitTaglineChars(taglineEl);
+      const prefersRM    = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (prefersRM || !taglineChars.length) {
-      taglineChars.forEach(c => (c.style.opacity = '1'));
-    } else {
-      gsap.fromTo(taglineChars,
-        { opacity: 0, y: 6 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.55,
-          ease: 'power3.out',
-          stagger: { each: 0.025, from: 'random' },
-          delay: 0.3,
-        }
-      );
+      if (prefersRM || !taglineChars.length) {
+        taglineChars.forEach(c => (c.style.opacity = '1'));
+      } else {
+        tl.fromTo(taglineChars,
+          { opacity: 0, y: 6 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1.0,
+            ease: 'power3.out',
+            stagger: { each: 0.04, from: 'random' },
+          },
+          1.4
+        );
+      }
     }
 
     // ── Hero-content: texto del segundo fold con expo easing ────────────────
@@ -621,6 +673,8 @@ import Footer from '../components/Footer.astro';
       const logoGroup   = document.getElementById('logo-hero-paths')    as SVGGElement  | null;
       const logoStroke  = document.getElementById('logo-stroke-group') as SVGGElement  | null;
       const logoOverlay = document.getElementById('logo-hero-overlay') as HTMLElement  | null;
+      const video       = document.getElementById('meteor-video')      as HTMLVideoElement | null;
+      const inner       = document.getElementById('meteor-inner')      as HTMLElement | null;
 
       // Aberración cromática reactiva a velocidad de scroll (Lenis velocity → feOffset)
       let aberLerp = 0;
@@ -633,6 +687,7 @@ import Footer from '../components/Footer.astro';
       });
 
       gsap.set('#scroll-indicator', { opacity: 1 });
+      gsap.set('#meteor-container', { scale: 1.8 });
 
       // El overlay empieza en opacity:0 para evitar flash antes del intro.
       // Lo ponemos a 1 inmediatamente aquí — el intro ya terminó.
@@ -675,6 +730,44 @@ import Footer from '../components/Footer.astro';
           },
         },
       });
+
+      // ── Meteor animations integrated into the main timeline ──
+      // This synchronizes the video scrubbing and 3D transforms with the pinned ScrollTrigger tl.
+      // Doing so prevents them from going out of sync or jumping due to pinSpacing padding.
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+
+        const addVideoScrub = () => {
+          if (!video.duration || isNaN(video.duration)) return;
+          tl.fromTo(video,
+            { currentTime: 0 },
+            {
+              currentTime: video.duration - 0.05,
+              ease: 'none',
+              duration: 2.0,
+            },
+            0
+          );
+        };
+
+        if (video.duration && isFinite(video.duration)) {
+          addVideoScrub();
+        } else {
+          video.addEventListener('loadedmetadata', addVideoScrub);
+        }
+      }
+
+      if (inner) {
+        tl.to(inner, {
+          rotation: 360,
+          xPercent: 15,
+          yPercent: 30,
+          scale:    0.7,
+          ease:     'none',
+          duration: 2.0,
+        }, 0);
+      }
 
       // ── Fase A: Logo zoom (t:0 → 1.0) ────────────────────────────────────
       const origin = `${vw / 2} ${vh / 2}`;
@@ -768,8 +861,8 @@ import Footer from '../components/Footer.astro';
       }
 
       tl.fromTo('#meteor-container',
-        { scale:1, opacity:1 },
-        { scale:2.5, opacity:0, ease:'power2.in', duration:1.0 },
+        { scale:1.8, opacity:1 },
+        { scale:1.8, opacity:0, ease:'power2.in', duration:1.0 },
         1.0,
       );
     }
@@ -794,6 +887,14 @@ import Footer from '../components/Footer.astro';
 </script>
 
 <style>
+  /* Ocultar elementos del hero por defecto para evitar FOUC */
+  #collage-container,
+  #meteor-container,
+  #scroll-indicator {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /* Collage cards: shadow rim for depth separation against the dark background */
   .card-parallax {
     box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
@@ -804,8 +905,8 @@ import Footer from '../components/Footer.astro';
   @media (max-width: 768px) {
     /* Meteor más pequeño para no bloquear las tarjetas en pantallas estrechas */
     #meteor-inner {
-      width:  55vw !important;
-      height: 55vw !important;
+      width:  70vw !important;
+      height: 70vw !important;
     }
     /* Las tarjetas usan max-width para no desbordar el viewport en mobile.
        Se preserva la posición absoluta porcentual para que la animación

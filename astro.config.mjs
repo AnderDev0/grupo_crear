@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
+import netlify from '@astrojs/netlify';
 
 /*
  * Astro 6: output 'hybrid' fue eliminado. El modo 'static' (default)
@@ -14,7 +15,7 @@ import tailwindcss from '@tailwindcss/vite';
  *   Node.js → npm i @astrojs/node     → import node    from '@astrojs/node'
  */
 export default defineConfig({
-
+  adapter: netlify(),
   devToolbar: { enabled: false },
 
   vite: {

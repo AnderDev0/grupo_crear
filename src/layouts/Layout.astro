@@ -1,6 +1,8 @@
 ---
 import Header from '../components/Header.astro';
 import '../styles/global.css';
+import { readFileSync } from 'node:fs';
+import { resolve }      from 'node:path';
 
 export interface Props {
   title?: string;
@@ -11,10 +13,17 @@ const {
   title       = 'Grupo Crear — Agencia de Publicidad',
   description = 'Agencia de publicidad y soluciones gráficas. Impresión gran formato, material POP, branding y diseño web en Colombia.',
 } = Astro.props;
+
+let logoPathsHTML = '';
+try {
+  const svgRaw  = readFileSync(resolve('public/logo-Grupo-Crear-vector_sintext.svg'), 'utf-8');
+  const matches = [...svgRaw.matchAll(/<path\s+class="b"[^>]*\/>/g)];
+  logoPathsHTML = matches.map(m => m[0].replace(/\s*class="[^"]*"/g, '')).join('\n');
+} catch (_) {}
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" class="loading">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,6 +44,30 @@ const {
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:ital,wght@0,1..1000;1,1..1000&family=Sofia+Sans+Condensed:wght@1..1000&display=swap" rel="stylesheet" />
+
+  <!-- Coordinación de carga anticipada -->
+  <script is:inline>
+    window.__webglReady = false;
+    window.__windowLoaded = false;
+    
+    // Temporizador de respaldo para evitar bloqueos
+    window.__preloaderTimeout = setTimeout(() => {
+      console.warn("Preloader timeout reached. Forcing load state.");
+      window.__webglReady = true;
+      window.__windowLoaded = true;
+      if (window.__checkAllLoaded) window.__checkAllLoaded();
+    }, 4500);
+
+    window.addEventListener('webgl:ready', () => {
+      window.__webglReady = true;
+      if (window.__checkAllLoaded) window.__checkAllLoaded();
+    }, { once: true });
+
+    window.addEventListener('load', () => {
+      window.__windowLoaded = true;
+      if (window.__checkAllLoaded) window.__checkAllLoaded();
+    }, { once: true });
+  </script>
 
   <style is:global>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -60,7 +93,8 @@ const {
     }
     #glow-bg{animation:glow-breathe 9s ease-in-out infinite alternate}
     ::selection{background:var(--n);color:#fff}
-    html{scroll-behavior:auto}
+    html{scroll-behavior:auto;scrollbar-gutter:stable}
+    html.loading{overflow:hidden}
     body{font-family:'Sofia Sans',sans-serif;background:var(--bg);color:var(--w);overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5}
     .cond{font-family:'Sofia Sans Condensed','Sofia Sans',sans-serif}
 
@@ -86,7 +120,7 @@ const {
     @media(max-width:980px){#flight{display:none}}
 
     /* NAV */
-    #nav{position:fixed;inset:0 0 auto 0;z-index:300;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);transition:height .5s var(--ease),background .5s var(--ease),border-color .5s var(--ease);border-bottom:1px solid transparent}
+    #nav{position:fixed;inset:0 0 auto 0;z-index:300;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);transition:height .5s var(--ease),background .5s var(--ease),border-color .5s var(--ease),opacity .5s var(--ease);border-bottom:1px solid transparent;opacity:0;pointer-events:none}
     #nav.s{height:64px;background:rgba(0,16,42,.72);backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid var(--w06)}
     .brand{display:flex;align-items:center;text-decoration:none;color:#fff;line-height:0}
     .brand:hover #logoWrap{transform:scale(1.03)}
@@ -368,6 +402,44 @@ const {
 </head>
 <body class="has-rocket-cursor">
 
+  <!-- Pantalla de carga opaca (Preloader) con el logo estático en contorno (Imagen 2) -->
+  <div
+    id="preloader"
+    aria-label="Cargando"
+    style="position:fixed;inset:0;background:radial-gradient(circle at 50% 0%, #002255 0%, #001433 75%);z-index:99999999;transition:opacity 1.5s cubic-bezier(0.16, 1, 0.3, 1);opacity:1;pointer-events:auto;overflow:hidden;"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      style="position:absolute;inset:0;width:100%;height:100%;display:block;overflow:hidden;"
+      aria-hidden="true"
+    >
+      <defs>
+        <filter id="preloader-stroke-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <g>
+        <svg
+          viewBox="0 0 1199 680"
+          preserveAspectRatio="xMidYMid meet"
+          x="5%" y="10%"
+          width="90%" height="80%"
+        >
+          <g fill="none" stroke="#E84E1B" stroke-width="1.8"
+             stroke-linejoin="round" stroke-linecap="round"
+             filter="url(#preloader-stroke-glow)" opacity="0.85">
+            <Fragment set:html={logoPathsHTML} />
+          </g>
+        </svg>
+      </g>
+    </svg>
+  </div>
+
   <!-- Grano analógico -->
   <div class="grain" aria-hidden="true">
     <svg xmlns="http://www.w3.org/2000/svg">
@@ -399,8 +471,7 @@ const {
   <!-- NAV -->
   <Header />
 
-  <!-- Slot para el overlay de intro (solo en páginas que lo usen) -->
-  <slot name="intro" />
+
 
   <!-- Contenido principal -->
   <main id="main-content">
@@ -464,6 +535,18 @@ const {
       { threshold: 0.08, rootMargin: '0px 0px -48px 0px' },
     );
     revealEls.forEach((el) => io.observe(el));
+  </script>
+
+  <!-- Script de validación final para ocultar preloader -->
+  <script is:inline>
+    window.__checkAllLoaded = function() {
+      if (window.__windowLoaded && window.__webglReady) {
+        if (window.__preloaderTimeout) clearTimeout(window.__preloaderTimeout);
+        window.dispatchEvent(new CustomEvent('load:complete'));
+      }
+    };
+    // Ejecutar inmediatamente por si ya se cargaron los eventos
+    window.__checkAllLoaded();
   </script>
 </body>
 </html>

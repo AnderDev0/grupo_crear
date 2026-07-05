@@ -80,10 +80,12 @@ try {
   async function bootIntro(): Promise<void> {
     const { gsap } = await import('../utils/gsap-config');
 
-    const overlay       = document.getElementById('intro-overlay')   as HTMLElement    | null;
-    const maskLogoGroup = document.getElementById('mask-logo-paths') as SVGGElement    | null;
-    const logoSvg       = document.getElementById('logo-paths-svg')  as SVGSVGElement  | null;
-    const overlayRect   = document.getElementById('intro-rect')      as SVGRectElement | null;
+    const overlay       = document.getElementById('intro-overlay')     as HTMLElement    | null;
+    const maskLogoGroup = document.getElementById('mask-logo-paths')   as SVGGElement    | null;
+    const logoSvg       = document.getElementById('logo-paths-svg')    as SVGSVGElement  | null;
+    const overlayRect   = document.getElementById('intro-rect')        as SVGRectElement | null;
+    const logoStroke    = document.getElementById('logo-stroke-group') as SVGGElement    | null;
+    const logoOverlay   = document.getElementById('logo-hero-overlay') as HTMLElement    | null;
 
     function revealScene(): void {
       if (overlay) {
@@ -98,9 +100,15 @@ try {
     if (logoSvg.children.length === 0)                          { revealScene(); return; }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { revealScene(); return; }
 
+    // Activar el canvas overlay (fondo azul sin estelas y contorno naranja)
+    if (logoOverlay) {
+      gsap.set(logoOverlay, { opacity: 1 });
+    }
+    if (logoStroke) {
+      gsap.set(logoStroke, { scale: 1 });
+    }
+
     // ── Posicionar el logo SVG via atributos (único método que funciona en <mask>) ──
-    // Centramos el logo al 55% del viewport width, manteniendo el aspect ratio 1199:680.
-    // Al 55% de 1440px: logoW=792px → logoH=449px → centrado vertical y horizontal.
     const vw    = window.innerWidth;
     const vh    = window.innerHeight;
     const logoW = Math.round(vw * 0.55);
@@ -113,24 +121,18 @@ try {
     logoSvg.setAttribute('width',  String(logoW));
     logoSvg.setAttribute('height', String(logoH));
 
-    // ── Animación Logo-Portal ─────────────────────────────────────────────────
-    // delay:1.2s = Fase 1 (Hold) — el usuario ve el hero a través del logo.
-    //   El primer frame que ve es el logo como ventana hacia las cards y el meteor.
-    //   Sin este hold, la animación pasa demasiado rápido y no se aprecia el efecto.
-    //
-    // scale:50, svgOrigin centrado = Fase 2 (Zoom-Through) — las ventanas del logo
-    //   se expanden desde el centro hacia afuera, dando la sensación de "entrar"
-    //   a través del logo hacia la escena interior.
-    //
-    // '-=0.35' = Fase 3 (Fade) — se superpone con el final del zoom para suavizar
-    //   cualquier borde residual de anti-aliasing a escala extrema.
+    // ── Animación Logo-Portal Sincronizada ──────────────────────────────────
+    // Se anima en conjunto la máscara del portal y el trazo naranja.
+    const targets: any[] = [maskLogoGroup];
+    if (logoStroke) targets.push(logoStroke);
+
     gsap.timeline({ onComplete: revealScene })
-      .to(maskLogoGroup, {
+      .to(targets, {
         scale:     50,
         svgOrigin: `${vw / 2} ${vh / 2}`,
         duration:  1.6,
         ease:      'power3.in',
-        delay:     1.2,
+        delay:     0.5, // Espera a que el preloader termine de desvanecerse
       })
       .to(overlayRect, {
         opacity:  0,
@@ -139,12 +141,10 @@ try {
       }, '-=0.35');
   }
 
-  // Espera a que el DOM esté completo antes de ejecutar.
-  // No se necesita doble rAF porque el posicionamiento es via setAttribute
-  // (no depende de bounding boxes calculados por el motor CSS).
-  if (document.readyState === 'complete') {
+  // Esperar a que el preloader haya terminado para arrancar la intro
+  if ((window as any).__preloaderDone) {
     bootIntro();
   } else {
-    window.addEventListener('load', bootIntro, { once: true });
+    window.addEventListener('preloader:complete', bootIntro, { once: true });
   }
 </script>

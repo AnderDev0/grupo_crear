@@ -104,6 +104,7 @@ uniform int   uColorCount;
 uniform vec3  uBgColor;
 uniform float uSpeed,uStreakWidth,uStreakLength,uGlow,uDensity,uTwinkle,uZoom,uBgGlow;
 uniform int   uStreakCount;
+uniform float uProgress;
 
 vec3 palette(float h){
   int i=int(floor(clamp(h,0.,.999999)*float(uColorCount)));
@@ -155,7 +156,7 @@ void main(){
     float w=mix(1.5,1.+sin(T+7.*h+4.),uTwinkle);
     vec2 inner=vec2(length(max(Pp,vec2(-1.,0.))),length(Pp)-zr)-zr;
     vec2 sm=vec2(1.)-smoothstep(-rr,rr,inner);
-    O.rgb+=dot(sm,vec2(exp(tail*Pp.y),3.))*col*w;
+    O.rgb+=dot(sm,vec2(exp(tail*Pp.y),3.))*col*w * uProgress;
     C.x+=Y.x/8.;
   }
   vec3 col=sqrt(tanhv(max(O.rgb*uGlow-vec3(.04,.08,.02),0.)));
@@ -199,7 +200,11 @@ void main(){
       const c = h.replace('#','').padEnd(6,'0');
       return [parseInt(c.slice(0,2),16)/255, parseInt(c.slice(2,4),16)/255, parseInt(c.slice(4,6),16)/255];
     };
+    // Inicializar el control de las estelas desde JS/GSAP
+    window.lightfall = { progress: 0.0 };
+
     const u = (n) => gl.getUniformLocation(prog, n);
+    const uProgressLoc = u('uProgress');
 
     const U = {
       res:  u('iResolution'), time: u('iTime'),
@@ -263,9 +268,12 @@ void main(){
       raf = requestAnimationFrame(loop);
       if (t - lastT < TARGET_MS) return;
       lastT = t;
+      gl.uniform1f(uProgressLoc, window.lightfall ? window.lightfall.progress : 1.0);
       gl.uniform1f(U.time, t * 0.001);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
+    // Despachar evento para indicar que WebGL está listo antes de arrancar el loop
+    window.dispatchEvent(new CustomEvent('webgl:ready'));
     raf = requestAnimationFrame(loop);
 
     // Libera GPU cuando el overlay se oculta (tras completar el scroll)
