@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="35" cy="30" r="18" />
+  <path d="M30 30h10" />
+  <path d="M35 25v10" />
+  <text x="70" y="37" font-family="'Sofia Sans Condensed', system-ui, sans-serif" font-size="20" font-weight="900" fill="currentColor" letter-spacing="1.5">COLOMBIA</text>
+</svg>

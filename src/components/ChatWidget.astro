@@ -1,0 +1,731 @@
+---
+// ChatWidget.astro - Floating AI Assistant
+---
+
+<div id="ai-chat-container" class="chat-closed" aria-label="Asistente de IA de Grupo Crear">
+  <!-- Botón Flotante con Wrapper de Entrada -->
+  <div class="chat-btn-wrapper">
+    <button id="chat-toggle-btn" class="chat-btn" aria-label="Abrir chat con asistente de IA">
+      <!-- Icono de Mensaje / Spark -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-chat" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+      </svg>
+      <!-- Icono de Cerrar (oculto por defecto) -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-close" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      <!-- Indicador de notificación / pulso -->
+      <span class="btn-pulse"></span>
+    </button>
+  </div>
+
+  <!-- Ventana de Chat (Card) -->
+  <div id="chat-card" class="chat-window">
+    <!-- Cabecera -->
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="bot-avatar">
+          <span>GC</span>
+          <span class="online-status"></span>
+        </div>
+        <div>
+          <h3>Asistente Crear</h3>
+          <span class="sub">En línea • Chat de IA</span>
+        </div>
+      </div>
+      <button id="chat-close-header-btn" class="close-header-btn" aria-label="Cerrar chat">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Contenedor de Mensajes -->
+    <div id="chat-messages" class="chat-messages-body" data-lenis-prevent>
+      <!-- Mensaje de bienvenida inicial -->
+      <div class="message msg-bot">
+        <div class="msg-bubble">
+          ¡Hola! 👋 Soy el asistente virtual de <strong>Grupo Crear</strong>. 
+          <br><br>
+          ¿En qué puedo ayudarte hoy? Puedo brindarte información detallada sobre:
+          <ul style="margin: 8px 0 0 16px; padding: 0; font-size: 13px;">
+            <li>Impresión Gran Formato</li>
+            <li>Material P.O.P</li>
+            <li>Branding e Identidad</li>
+            <li>Diseño y Desarrollo Web</li>
+            <li>Fotografía Publicitaria</li>
+            <li>Campañas Integrales</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Indicador de Escritura (Typing indicator) -->
+      <div id="typing-indicator" class="message msg-bot typing-container hidden">
+        <div class="msg-bubble typing-bubble">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de Entrada -->
+    <form id="chat-form" class="chat-input-area">
+      <input 
+        type="text" 
+        id="chat-input" 
+        placeholder="Escribe tu pregunta aquí..." 
+        maxlength="500" 
+        required 
+        autocomplete="off"
+        aria-label="Mensaje para el asistente"
+      />
+      <button type="submit" id="chat-send-btn" aria-label="Enviar mensaje">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<style is:global>
+  /* Contenedor principal */
+  #ai-chat-container {
+    position: fixed;
+    right: 24px;
+    bottom: 96px; /* Posición por defecto (cerrado): encima de WhatsApp */
+    z-index: 290;
+    font-family: 'Sofia Sans', sans-serif;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Animación de traslación al abrirse (Desktop) */
+  @media (min-width: 481px) {
+    #ai-chat-container.chat-open {
+      transform: translate(-72px, 72px);
+    }
+  }
+
+  /* Wrapper para la animación de entrada de carga de página */
+  .chat-btn-wrapper {
+    opacity: 0;
+    transform: scale(0.6);
+    animation: chat-pop-in 0.6s 1.8s var(--ease, cubic-bezier(.16, 1, .3, 1)) forwards;
+  }
+
+  @keyframes chat-pop-in {
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Botón flotante */
+  .chat-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: var(--n, #E84E1B);
+    border: none;
+    cursor: none; /* Mantiene la estética del cursor personalizado cohete del sitio */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(232, 78, 27, 0.35);
+    color: #FFF;
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+    outline: none;
+  }
+
+  .chat-btn:hover {
+    transform: scale(1.08);
+    background: var(--n-d, #c23e12);
+  }
+
+  .chat-btn svg {
+    width: 26px;
+    height: 26px;
+    transition: opacity 0.3s, transform 0.3s;
+    position: absolute;
+  }
+
+  /* Control de iconos en botón flotante */
+  #ai-chat-container.chat-closed .icon-close {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+
+  #ai-chat-container.chat-open .icon-close {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+
+  #ai-chat-container.chat-closed .icon-chat {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+
+  #ai-chat-container.chat-open .icon-chat {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+  }
+
+  /* Pulso de notificación en botón */
+  .btn-pulse {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    background: #FFB300;
+    border: 2px solid var(--bg, #001433);
+    border-radius: 50%;
+  }
+
+  #ai-chat-container.chat-open .btn-pulse {
+    display: none; /* Ocultar si ya está abierto */
+  }
+
+  /* Ventana del Chat */
+  .chat-window {
+    position: absolute;
+    bottom: 74px;
+    right: 0;
+    width: min(380px, 90vw);
+    height: min(520px, 75vh);
+    background: rgba(0, 25, 74, 0.85); /* Coincide con var(--bg2) */
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+    transform-origin: bottom right;
+  }
+
+  #ai-chat-container.chat-open .chat-window {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Cabecera del chat */
+  .chat-header {
+    padding: 14px 18px;
+    background: rgba(4, 16, 42, 0.6); /* Coincide con var(--ink) */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bot-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--n, #E84E1B) 0%, #7a2409 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    position: relative;
+  }
+
+  .online-status {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    background: #00E676;
+    border: 2px solid #00194a;
+    border-radius: 50%;
+    animation: status-pulse 2s infinite;
+  }
+
+  @keyframes status-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.4); }
+    50% { transform: scale(1.1); box-shadow: 0 0 0 4px rgba(0, 230, 118, 0); }
+  }
+
+  .chat-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  .chat-header .sub {
+    font-size: 11px;
+    color: var(--w60, rgba(255, 255, 255, 0.6));
+  }
+
+  .close-header-btn {
+    background: none;
+    border: none;
+    color: var(--w60, rgba(255, 255, 255, 0.6));
+    cursor: none;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+
+  .close-header-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .close-header-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Cuerpo de mensajes */
+  .chat-messages-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+
+  /* Estilos para scrollbars */
+  .chat-messages-body::-webkit-scrollbar {
+    width: 5px;
+  }
+  .chat-messages-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .chat-messages-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  /* Burbujas de mensajes */
+  .message {
+    display: flex;
+    flex-direction: column;
+    max-width: 82%;
+    animation: fade-in-up 0.3s ease-out forwards;
+  }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-bot {
+    align-self: flex-start;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+  }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .msg-bot .msg-bubble {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--w, #FFF);
+    border-top-left-radius: 2px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+
+  .msg-user .msg-bubble {
+    background: var(--n, #E84E1B);
+    color: #fff;
+    border-top-right-radius: 2px;
+    box-shadow: 0 4px 15px rgba(232, 78, 27, 0.2);
+  }
+
+  /* Botón CTA de WhatsApp dentro del chat */
+  .chat-cta-wa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #25D366;
+    color: #fff !important;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+    transition: background 0.3s, transform 0.2s;
+    cursor: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .chat-cta-wa:hover {
+    background: #1ebe57;
+    transform: scale(1.02);
+  }
+
+  .wa-btn-icon {
+    width: 18px;
+    height: 18px;
+    fill: #fff;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--w40, rgba(255, 255, 255, 0.4));
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+
+  .msg-bot .msg-time {
+    align-self: flex-start;
+  }
+
+  .msg-user .msg-time {
+    align-self: flex-end;
+  }
+
+  /* Indicador de escritura (Typing) */
+  .typing-bubble {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+  }
+
+  .typing-bubble .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--w60, rgba(255, 255, 255, 0.6));
+    border-radius: 50%;
+    animation: typing-bounce 1.4s infinite ease-in-out both;
+  }
+
+  .typing-bubble .dot:nth-child(1) { animation-delay: -0.32s; }
+  .typing-bubble .dot:nth-child(2) { animation-delay: -0.16s; }
+
+  @keyframes typing-bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Área de entrada de texto */
+  .chat-input-area {
+    padding: 12px;
+    background: rgba(4, 16, 42, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .chat-input-area input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #fff;
+    outline: none;
+    transition: border-color 0.25s, background 0.25s;
+    font-family: inherit;
+  }
+
+  .chat-input-area input:focus {
+    border-color: rgba(232, 78, 27, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .chat-input-area button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--n, #E84E1B);
+    border: none;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: none;
+    flex-shrink: 0;
+    transition: background 0.25s, transform 0.25s;
+  }
+
+  .chat-input-area button:hover {
+    background: var(--n-d, #c23e12);
+    transform: scale(1.05);
+  }
+
+  .chat-input-area button:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--w40, rgba(255, 255, 255, 0.4));
+    transform: none;
+  }
+
+  .chat-input-area button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Ajustes para móviles */
+  @media (max-width: 480px) {
+    #ai-chat-container {
+      right: 16px;
+      bottom: 88px;
+    }
+    .chat-window {
+      width: calc(100vw - 32px);
+      height: 60vh;
+      bottom: 70px;
+    }
+  }
+</style>
+
+<script>
+  // Script del lado del cliente para gestionar la interactividad del chat
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('ai-chat-container');
+    const toggleBtn = document.getElementById('chat-toggle-btn');
+    const closeHeaderBtn = document.getElementById('chat-close-header-btn');
+    const form = document.getElementById('chat-form') as HTMLFormElement;
+    const input = document.getElementById('chat-input') as HTMLInputElement;
+    const messagesContainer = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const sendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement;
+
+    if (!container || !toggleBtn || !form || !input || !messagesContainer || !typingIndicator || !sendBtn) {
+      return;
+    }
+
+    // Historial de conversación guardado en memoria
+    // Cada elemento sigue el formato: { role: 'user' | 'model', parts: [{ text: string }] }
+    let chatHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+
+    // Alternar visibilidad de la ventana
+    const toggleChat = () => {
+      const isOpen = container.classList.contains('chat-open');
+      if (isOpen) {
+        container.classList.remove('chat-open');
+        container.classList.add('chat-closed');
+      } else {
+        container.classList.remove('chat-closed');
+        container.classList.add('chat-open');
+        // Autoenfocar el input en dispositivos de escritorio
+        if (window.innerWidth > 768) {
+          input.focus();
+        }
+        scrollToBottom();
+      }
+    };
+
+    toggleBtn.addEventListener('click', toggleChat);
+    if (closeHeaderBtn) {
+      closeHeaderBtn.addEventListener('click', toggleChat);
+    }
+
+    // Desplazar contenedor de mensajes al final
+    const scrollToBottom = () => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    };
+
+    // Formatear hora de los mensajes
+    const getFormattedTime = () => {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Añadir mensaje a la UI
+    const appendMessageUI = (role: 'user' | 'bot', text: string) => {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${role === 'user' ? 'msg-user' : 'msg-bot'}`;
+
+      const bubbleDiv = document.createElement('div');
+      bubbleDiv.className = 'msg-bubble';
+      
+      // Sanitizar el texto y renderizar
+      if (role === 'bot') {
+        // Permitir markdown básico renderizado de forma segura
+        bubbleDiv.innerHTML = parseBasicMarkdown(text);
+      } else {
+        bubbleDiv.textContent = text;
+      }
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'msg-time';
+      timeSpan.textContent = getFormattedTime();
+
+      msgDiv.appendChild(bubbleDiv);
+      msgDiv.appendChild(timeSpan);
+      
+      // Insertar antes del indicador de escritura para mantenerlo siempre abajo
+      messagesContainer.insertBefore(msgDiv, typingIndicator);
+      scrollToBottom();
+    };
+
+    // Parseador extremadamente simple y seguro para negritas y listas
+    const parseBasicMarkdown = (text: string): string => {
+      // Escapar HTML básico de entrada para evitar XSS
+      let escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Convertir **negrita**
+      escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+      // Convertir saltos de línea a <br>
+      escaped = escaped.replace(/\n/g, '<br>');
+
+      // Convertir viñetas simples "- elemento" a listas
+      // Encontrar bloques de viñetas y envolverlos
+      const lines = escaped.split('<br>');
+      let inList = false;
+      const formattedLines = lines.map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          const itemText = trimmed.substring(2);
+          let prefix = '';
+          if (!inList) {
+            inList = true;
+            prefix = '<ul style="margin: 6px 0 0 16px; padding: 0;">';
+          }
+          return `${prefix}<li style="margin-bottom: 4px;">${itemText}</li>`;
+        } else {
+          let suffix = '';
+          if (inList) {
+            inList = false;
+            suffix = '</ul>';
+          }
+          return `${suffix}${line}`;
+        }
+      });
+
+      let finalHtml = formattedLines.join('<br>');
+      if (inList) {
+        finalHtml += '</ul>';
+      }
+      
+      // Convertir [BOTON_WHATSAPP:Mensaje] a un botón de enlace de WhatsApp
+      finalHtml = finalHtml.replace(/\[BOTON_WHATSAPP:(.*?)\]/g, (match, messageText) => {
+        const decodedMessage = messageText
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .trim();
+        const encodedText = encodeURIComponent(decodedMessage);
+        return `
+          <a href="https://wa.me/573000000000?text=${encodedText}" class="chat-cta-wa" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" class="wa-btn-icon">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            <span>Iniciar Cotización por WhatsApp</span>
+          </a>
+        `;
+      });
+
+      // Limpiar dobles saltos de línea alrededor de listas creados por <br>
+      return finalHtml.replace(/<\/ul><br>/g, '</ul>').replace(/<br><ul/g, '<ul');
+    };
+
+    // Enviar mensaje a la API
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const messageText = input.value.trim();
+      if (!messageText) return;
+
+      // Limpiar input y desactivar controles
+      input.value = '';
+      input.disabled = true;
+      sendBtn.disabled = true;
+
+      // Mostrar en UI
+      appendMessageUI('user', messageText);
+
+      // Mostrar indicador de escritura
+      typingIndicator.classList.remove('hidden');
+      scrollToBottom();
+
+      try {
+        // Realizar fetch a la API
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: messageText,
+            history: chatHistory,
+          }),
+        });
+
+        const data = await response.json();
+
+        // Ocultar indicador
+        typingIndicator.classList.add('hidden');
+
+        if (data.success && data.reply) {
+          // Mostrar respuesta en UI
+          appendMessageUI('bot', data.reply);
+
+          // Actualizar historial del chat en el cliente para mantener el contexto en el siguiente mensaje
+          chatHistory.push({
+            role: 'user',
+            parts: [{ text: messageText }],
+          });
+          chatHistory.push({
+            role: 'model',
+            parts: [{ text: data.reply }],
+          });
+
+          // Limitar el historial en memoria para evitar prompts excesivamente grandes (por ejemplo, últimos 6 turnos)
+          if (chatHistory.length > 12) {
+            chatHistory = chatHistory.slice(chatHistory.length - 12);
+          }
+        } else {
+          appendMessageUI('bot', data.message || 'Lo siento, ocurrió un problema al procesar tu solicitud.');
+        }
+      } catch (err) {
+        console.error('Error al comunicarse con la API de chat:', err);
+        typingIndicator.classList.add('hidden');
+        appendMessageUI('bot', 'No pude contactar al servidor. Por favor, revisa tu conexión e inténtalo de nuevo.');
+      } finally {
+        // Reactivar controles
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+        scrollToBottom();
+      }
+    });
+  });
+</script>
