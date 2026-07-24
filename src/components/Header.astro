@@ -11,7 +11,7 @@ import LogoDisplace from './LogoDisplace.astro';
   <LogoDisplace />
 
   <!-- role="list" explícito: Tailwind list-none elimina el rol semántico en VoiceOver/Safari -->
-  <ul class="menu hidden md:flex items-center gap-8 md:gap-11 list-none" id="menu" role="list">
+  <ul class="menu items-center gap-8 md:gap-11 list-none" id="menu" role="list">
     <li><a href="/servicios" class="text-white/60 hover:text-white text-sm font-medium tracking-wide transition-colors duration-300 relative py-1 after:content-[''] after:absolute after:left-0 after:bottom-[-6px] after:w-0 after:h-[1.5px] after:bg-[#E84E1B] after:transition-all after:duration-350 hover:after:w-full">Servicios</a></li>
     <li><a href="/#nos"  class="text-white/60 hover:text-white text-sm font-medium tracking-wide transition-colors duration-300 relative py-1 after:content-[''] after:absolute after:left-0 after:bottom-[-6px] after:w-0 after:h-[1.5px] after:bg-[#E84E1B] after:transition-all after:duration-350 hover:after:w-full">Estudio</a></li>
     <li><a href="/#port" class="text-white/60 hover:text-white text-sm font-medium tracking-wide transition-colors duration-300 relative py-1 after:content-[''] after:absolute after:left-0 after:bottom-[-6px] after:w-0 after:h-[1.5px] after:bg-[#E84E1B] after:transition-all after:duration-350 hover:after:w-full">Trabajo</a></li>
@@ -32,7 +32,7 @@ import LogoDisplace from './LogoDisplace.astro';
     aria-controls vincula el botón con el menú que controla.
   -->
   <button
-    class="burger flex md:hidden w-12 h-12 border border-white/12 rounded-full bg-transparent flex-col items-center justify-center gap-1.5"
+    class="burger w-12 h-12 border border-white/12 rounded-full bg-transparent flex-col items-center justify-center gap-1.5"
     id="burger"
     type="button"
     aria-label="Menú"
@@ -49,6 +49,16 @@ import LogoDisplace from './LogoDisplace.astro';
   const nav    = document.getElementById('nav');
   const burger = document.getElementById('burger');
   const menu   = document.getElementById('menu');
+
+  if (nav && !document.documentElement.classList.contains('loading')) {
+    nav.style.opacity = '1';
+    nav.style.pointerEvents = 'auto';
+    const menuEls = nav.querySelectorAll('.menu li, #menu, .burger, #nav-brand');
+    menuEls.forEach((el) => {
+      (el as HTMLElement).style.opacity = '1';
+      (el as HTMLElement).style.transform = 'none';
+    });
+  }
 
   // El header permanece transparente durante toda la fase del Lightfall/máscara.
   // Solo adquiere fondo sólido cuando #hero-content (segundo fold) entra al viewport,

@@ -1035,7 +1035,7 @@ const stripColFotos = Array.from({ length: STRIP_COLS }, (_, ci) =>
 
   /* ── 2. STICKY NAV — REDIRECCIÓN DIRECTA (SIN SCROLL HIGHLIGHT) ── */
   ScrollTrigger.create({
-    trigger: '#hero',
+    trigger: '#serv-hero',
     start: 'bottom top+=92',
     onEnter: () => document.getElementById('serv-nav')?.classList.add('visible'),
     onLeaveBack: () => document.getElementById('serv-nav')?.classList.remove('visible'),
